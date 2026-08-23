@@ -134,7 +134,10 @@ export default function AdminOrdersPage() {
     return (
       order.id.toString().includes(searchLower) ||
       order.profile?.username?.toLowerCase().includes(searchLower) ||
-      order.profile?.email?.toLowerCase().includes(searchLower)
+      order.profile?.email?.toLowerCase().includes(searchLower) ||
+      order.guest_name?.toLowerCase().includes(searchLower) ||
+      order.guest_phone?.toLowerCase().includes(searchLower) ||
+      order.shipping_city?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -173,7 +176,7 @@ export default function AdminOrdersPage() {
             <div className="flex flex-1 items-center space-x-2">
               <Search className="text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search by order ID, customer name, or email..."
+                placeholder="Search by order ID, guest name, phone, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -244,8 +247,20 @@ export default function AdminOrdersPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {order.profile?.username || "Unknown"}
+                          {order.profile?.username ||
+                            order.guest_name ||
+                            "Unknown"}
+                          {!order.user_id && order.guest_name ? (
+                            <Badge variant="outline" className="ml-1 text-xs">
+                              Guest
+                            </Badge>
+                          ) : null}
                         </span>
+                        {order.guest_phone ? (
+                          <span className="text-xs text-gray-500">
+                            {order.guest_phone}
+                          </span>
+                        ) : null}
                         <span className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
                           {formatCurrency(order.total)}
@@ -293,12 +308,17 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
-                {order.shipping_address && (
+                {(order.shipping_address ||
+                  order.shipping_city ||
+                  order.shipping_street) && (
                   <div className="mt-3 flex items-center gap-1 text-sm text-gray-600">
                     <MapPin className="h-3 w-3" />
                     <span>
-                      {order.shipping_address.city},{" "}
-                      {order.shipping_address.state}
+                      {order.shipping_address
+                        ? `${order.shipping_address.city}, ${order.shipping_address.state}`
+                        : [order.shipping_street, order.shipping_city]
+                            .filter(Boolean)
+                            .join(", ")}
                     </span>
                   </div>
                 )}

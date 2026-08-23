@@ -128,18 +128,29 @@ export function OrderDetailsModal({
               <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
                 <User className="h-5 w-5" />
                 Customer Information
+                {!order.user_id && (
+                  <Badge variant="outline" className="text-xs">
+                    Guest
+                  </Badge>
+                )}
               </h3>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div>
                   <p className="text-sm font-medium text-slate-700">Name</p>
                   <p className="text-sm text-slate-600">
-                    {order.profile?.username || "Not provided"}
+                    {order.profile?.username ||
+                      order.guest_name ||
+                      "Not provided"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-700">Email</p>
+                  <p className="text-sm font-medium text-slate-700">
+                    {order.user_id ? "Email" : "Phone"}
+                  </p>
                   <p className="text-sm text-slate-600">
-                    {order.profile?.email || "Not provided"}
+                    {order.user_id
+                      ? order.profile?.email || "Not provided"
+                      : order.guest_phone || "Not provided"}
                   </p>
                 </div>
               </div>
@@ -148,7 +159,9 @@ export function OrderDetailsModal({
             <Separator />
 
             {/* Shipping Address */}
-            {order.shipping_address && (
+            {(order.shipping_address ||
+              order.shipping_street ||
+              order.shipping_city) && (
               <>
                 <div>
                   <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
@@ -156,17 +169,35 @@ export function OrderDetailsModal({
                     Shipping Address
                   </h3>
                   <div className="bg-card rounded-lg border p-4">
-                    <p className="text-foreground font-medium">
-                      {order.shipping_address.street}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {order.shipping_address.city},{" "}
-                      {order.shipping_address.state}{" "}
-                      {order.shipping_address.zip_code}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {order.shipping_address.country}
-                    </p>
+                    {order.shipping_address ? (
+                      <>
+                        <p className="text-foreground font-medium">
+                          {order.shipping_address.street}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {order.shipping_address.city},{" "}
+                          {order.shipping_address.state}{" "}
+                          {order.shipping_address.zip_code}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {order.shipping_address.country}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-foreground font-medium">
+                          {order.shipping_street}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {order.shipping_city}
+                        </p>
+                        {order.shipping_notes ? (
+                          <p className="text-muted-foreground mt-2 text-sm">
+                            Notes: {order.shipping_notes}
+                          </p>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                 </div>
                 <Separator />
