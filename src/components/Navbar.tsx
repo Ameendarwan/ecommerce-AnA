@@ -35,11 +35,11 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon-lg"
-            className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-6"
+            className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
             onClick={toggleSidebar}
             aria-label="Open menu"
           >
-            <Menu className="size-6" />
+            <Menu className="size-5" />
           </Button>
         </div>
 
@@ -60,47 +60,47 @@ export function Navbar() {
           {" "}
           <Button
             variant="ghost"
-            size="icon"
-            className="h-9 w-9 cursor-pointer"
+            size="icon-lg"
+            className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             {theme === "dark" ? (
-              <Sun className="h-[1.2rem] w-[1.2rem]" />
+              <Sun className="size-5" />
             ) : (
-              <Moon className="h-[1.2rem] w-[1.2rem]" />
+              <Moon className="size-5" />
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
           {user ? (
             <Button
               variant="ghost"
-              size="icon"
-              className="h-9 w-9 cursor-pointer"
+              size="icon-lg"
+              className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
               onClick={() => router.push("/profile")}
             >
-              <User className="h-[1.2rem] w-[1.2rem]" />
+              <User className="size-5" />
               <span className="sr-only">{user ? "Profile" : "Sign in"}</span>
             </Button>
           ) : (
             <Button
               variant="ghost"
-              size="icon"
-              className="h-9 w-9 cursor-pointer"
+              size="icon-lg"
+              className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
               onClick={() => router.push("/signup")}
             >
-              <LogIn className="h-[1.2rem] w-[1.2rem]" />
+              <LogIn className="size-5" />
               <span className="sr-only">Sign in</span>
             </Button>
           )}
           <Link href="/cart">
             <Button
               variant="ghost"
-              size="icon"
-              className="relative h-9 w-9 cursor-pointer"
+              size="icon-lg"
+              className="hover:bg-muted/50 relative cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
             >
-              <ShoppingCart className="h-[1.2rem] w-[1.2rem]" />
+              <ShoppingCart className="size-5" />
               {totalItems > 0 && (
-                <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-medium">
+                <span className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-medium">
                   {totalItems}
                 </span>
               )}

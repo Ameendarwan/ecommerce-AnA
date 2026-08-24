@@ -27,10 +27,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ProductFormModal } from "@/components/admin/ProductFormModal";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
+import { getProductDeleteErrorMessage } from "@/utils/errorHandling";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProduct, setEditingProduct] =
@@ -42,16 +44,16 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setInitialLoading(true);
       const data = await adminProductService.getAllProducts();
       setProducts(data);
     } catch (error) {
       console.error("Error fetching products:", error);
       toast.error("Failed to load products");
     } finally {
-      setLoading(false);
+      if (!silent) setInitialLoading(false);
     }
   };
 
@@ -60,7 +62,7 @@ export default function AdminProductsPage() {
       await adminProductService.createProduct(productData);
       toast.success("Product created successfully");
       setShowCreateModal(false);
-      fetchProducts();
+      fetchProducts({ silent: true });
     } catch (error) {
       console.error("Error creating product:", error);
       toast.error("Failed to create product");
@@ -75,7 +77,7 @@ export default function AdminProductsPage() {
       await adminProductService.updateProduct(productId, productData);
       toast.success("Product updated successfully");
       setEditingProduct(null);
-      fetchProducts();
+      fetchProducts({ silent: true });
     } catch (error) {
       console.error("Error updating product:", error);
       toast.error("Failed to update product");
@@ -84,13 +86,18 @@ export default function AdminProductsPage() {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
+      setDeleting(true);
       await adminProductService.deleteProduct(productId);
       toast.success("Product deleted successfully");
       setDeletingProduct(null);
-      fetchProducts();
+      setProducts((prev) =>
+        prev.filter((product) => product.product_id !== productId),
+      );
     } catch (error) {
       console.error("Error deleting product:", error);
-      toast.error("Failed to delete product");
+      toast.error(getProductDeleteErrorMessage(error));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -101,7 +108,7 @@ export default function AdminProductsPage() {
       product.sku?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex h-64 items-center justify-center">
@@ -257,7 +264,7 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
-      {filteredProducts.length === 0 && !loading && (
+      {filteredProducts.length === 0 && !initialLoading && (
         <Card>
           <CardContent className="py-12 text-center">
             <Package className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
@@ -306,6 +313,7 @@ export default function AdminProductsPage() {
         onConfirm={() => handleDeleteProduct(deletingProduct!.product_id)}
         title="Delete Product"
         description={`Are you sure you want to delete "${deletingProduct?.title}"? This action cannot be undone.`}
+        loading={deleting}
       />
     </div>
   );

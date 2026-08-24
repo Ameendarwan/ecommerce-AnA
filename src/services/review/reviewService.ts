@@ -2,15 +2,9 @@ import { supabase } from '@/lib/supabase/client';
 import { ReviewType } from '../../types';
 import { toast } from 'sonner';
 import { getClientUser } from '@/lib/supabase/clientUtils';
-import { isMockMode } from '@/lib/mockMode';
-import { getMockReviewsByProduct, getMockReviewById } from '@/mock';
 
 export const reviewService = {
   async getReviewsByProduct(productId: string): Promise<ReviewType[]> {
-    if (isMockMode()) {
-      return getMockReviewsByProduct(productId);
-    }
-
     try {
       const { data, error } = await supabase
         .from('reviews')
@@ -39,10 +33,6 @@ export const reviewService = {
   },
 
   async getReviewById(id: number): Promise<ReviewType | null> {
-    if (isMockMode()) {
-      return getMockReviewById(id);
-    }
-
     try {
       const { data, error } = await supabase
         .from('reviews')
@@ -127,7 +117,7 @@ export const reviewService = {
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
-        .eq('user_id', user.id) // Ensure user owns the review
+        .eq('user_id', user.id)
         .select('*')
         .single();
 
@@ -157,7 +147,7 @@ export const reviewService = {
         .from('reviews')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id); // Ensure user owns the review
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error deleting review:', error);

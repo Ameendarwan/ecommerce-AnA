@@ -8,7 +8,7 @@ import { useState, useMemo } from 'react'
 export interface FilterOptions {
   sortBy: 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'default';
   stockFilter: 'all' | 'in-stock' | 'out-of-stock';
-  categoryFilter: 'all' | 'shirts' | 'bags' | 'shoes';
+  categoryFilter: 'all' | number;
 }
 
 // Query Keys - Following TanStack Query key factory pattern
@@ -23,16 +23,6 @@ export const productKeys = {
     [...productKeys.lists(), { categoryId }] as const,
   filtered: (filters: FilterOptions, searchTerm: string) =>
     [...productKeys.lists(), { filters, searchTerm }] as const,
-};
-
-// Helper function to map category names to category_id
-const getCategoryId = (categoryName: string): number | null => {
-  const categoryMap: { [key: string]: number } = {
-    shirts: 1,
-    bags: 2,
-    shoes: 3,
-  };
-  return categoryMap[categoryName] || null;
 };
 
 // Helper function to sort products
@@ -63,21 +53,16 @@ const filterProducts = (
 ): ProductType[] => {
   let filtered = [...products];
 
-  // Filter by stock
   if (filters.stockFilter === 'in-stock') {
     filtered = filtered.filter((product) => product.stock > 0);
   } else if (filters.stockFilter === 'out-of-stock') {
     filtered = filtered.filter((product) => product.stock === 0);
   }
 
-  // Filter by category
   if (filters.categoryFilter !== 'all') {
-    const categoryId = getCategoryId(filters.categoryFilter);
-    if (categoryId !== null) {
-      filtered = filtered.filter(
-        (product) => product.category_id === categoryId
-      );
-    }
+    filtered = filtered.filter(
+      (product) => product.category_id === filters.categoryFilter
+    );
   }
 
   return filtered;

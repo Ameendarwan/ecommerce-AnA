@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
-import { Star, Heart, ShoppingCart, Eye, Badge } from "lucide-react";
+import { ShoppingCart, Heart, Eye, Badge } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -39,31 +39,8 @@ export function ProductCard({ product }: ProductCardProps) {
     router.push(`/products/${product.product_id}`);
   };
 
-  // Generate mock rating and reviews for demonstration
-  const rating = 4.2 + Math.random() * 0.8;
-  const reviewCount = Math.floor(Math.random() * 200) + 50;
   const soldOut = product.stock <= 0;
   const uniqueItem = product.stock === 1;
-
-  const renderStars = () => {
-    return Array.from({ length: 5 }, (_, index) => {
-      const filled = index < Math.floor(rating);
-      const halfFilled = index === Math.floor(rating) && rating % 1 >= 0.5;
-
-      return (
-        <Star
-          key={index}
-          className={`h-3 w-3 ${
-            filled
-              ? "fill-primary text-primary"
-              : halfFilled
-                ? "fill-primary/50 text-primary"
-                : "fill-muted text-muted-foreground/30"
-          }`}
-        />
-      );
-    });
-  };
 
   return (
     <Card
@@ -158,14 +135,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Product Details */}
       <CardContent className="space-y-2 p-3">
-        {/* Rating & Stock */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <div className="flex items-center gap-0.5">{renderStars()}</div>
-            <span className="text-muted-foreground text-xs">
-              {rating.toFixed(1)} ({reviewCount})
-            </span>
-          </div>
+        {/* Stock Status */}
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-1">
             <div className="bg-primary h-1 w-1 rounded-full"></div>
             <span className="text-primary text-xs font-medium">

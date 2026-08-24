@@ -2,7 +2,6 @@
 
 import { createServiceRoleSupabase } from '@/lib/supabase/serviceRole';
 import { SHIPPING_PKR } from '@/lib/shipping';
-import { isMockMode } from '@/lib/mockMode';
 
 export interface CodCartLine {
   product_id: string;
@@ -74,10 +73,8 @@ export async function placeCodOrder(
   );
   const total = subtotal + SHIPPING_PKR;
 
-  // Mock / offline-dev: accept order without DB when service role missing
-  if (isMockMode() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    const mockId = Math.floor(Date.now() % 100000);
-    return { ok: true, orderId: mockId, total };
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { ok: false, error: 'Order service is not configured' };
   }
 
   try {

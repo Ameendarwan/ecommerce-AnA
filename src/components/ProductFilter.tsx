@@ -10,10 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FilterOptions } from "@/hooks/queries";
+import { CategoryType } from "@/types";
 
 interface ProductFilterProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
+  categories?: CategoryType[];
 }
 
 const sortOptions = [
@@ -30,14 +32,11 @@ const stockOptions = [
   { value: "out-of-stock", label: "Out of Stock" },
 ];
 
-const categoryOptions = [
-  { value: "all", label: "All Categories" },
-  { value: "shirts", label: "Shirts" },
-  { value: "bags", label: "Bags" },
-  { value: "shoes", label: "Shoes" },
-];
-
-export function ProductFilter({ filters, onFilterChange }: ProductFilterProps) {
+export function ProductFilter({
+  filters,
+  onFilterChange,
+  categories = [],
+}: ProductFilterProps) {
   const handleSortChange = (value: string | null) => {
     if (value == null) return;
     onFilterChange({
@@ -58,9 +57,14 @@ export function ProductFilter({ filters, onFilterChange }: ProductFilterProps) {
     if (value == null) return;
     onFilterChange({
       ...filters,
-      categoryFilter: value as FilterOptions["categoryFilter"],
+      categoryFilter: value === "all" ? "all" : Number(value),
     });
   };
+
+  const categoryFilterValue =
+    filters.categoryFilter === "all"
+      ? "all"
+      : String(filters.categoryFilter);
 
   return (
     <motion.div
@@ -75,7 +79,6 @@ export function ProductFilter({ filters, onFilterChange }: ProductFilterProps) {
       </div>
 
       <div className="flex flex-1 flex-col gap-4 sm:flex-row">
-        {/* Sort Options */}
         <div className="flex flex-col gap-2">
           <label className="text-muted-foreground text-xs font-medium">
             Sort by
@@ -95,7 +98,6 @@ export function ProductFilter({ filters, onFilterChange }: ProductFilterProps) {
           </Select>
         </div>
 
-        {/* Stock Filter */}
         <div className="flex flex-col gap-2">
           <label className="text-muted-foreground text-xs font-medium">
             Stock Status
@@ -114,22 +116,22 @@ export function ProductFilter({ filters, onFilterChange }: ProductFilterProps) {
           </Select>
         </div>
 
-        {/* Category Filter */}
         <div className="flex flex-col gap-2">
           <label className="text-muted-foreground text-xs font-medium">
             Category
           </label>
           <Select
-            value={filters.categoryFilter}
+            value={categoryFilterValue}
             onValueChange={handleCategoryChange}
           >
             <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              {categoryOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={String(category.id)}>
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>

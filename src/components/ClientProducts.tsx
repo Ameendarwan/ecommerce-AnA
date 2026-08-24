@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/ProductCard";
-import { useProducts, FilterOptions } from "@/hooks/queries";
+import { useProducts, useCategories, FilterOptions } from "@/hooks/queries";
 import { ProductType } from "@/types";
 import { ErrorState } from "@/components/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -12,16 +12,6 @@ import { ProductFilter } from "@/components/ProductFilter";
 import { useState, useMemo } from "react";
 
 // Helper functions (moved from hook to component for simplicity)
-const getCategoryId = (categoryName: string): number | null => {
-  const categoryMap: { [key: string]: number } = {
-    shirts: 1,
-    bags: 2,
-    shoes: 3,
-  };
-  return categoryMap[categoryName] || null;
-};
-
-// Sort products based on the selected option
 const sortProducts = (
   products: ProductType[],
   sortBy: FilterOptions["sortBy"],
@@ -45,24 +35,17 @@ const sortProducts = (
 const filterProducts = (products: ProductType[], filters: FilterOptions) => {
   let filtered = [...products];
 
-  // Filter by stock (only if not 'all')
   if (filters.stockFilter === "in-stock") {
     filtered = filtered.filter((product) => product.stock > 0);
   } else if (filters.stockFilter === "out-of-stock") {
     filtered = filtered.filter((product) => product.stock === 0);
   }
-  // When stockFilter is 'all', show all products regardless of stock
 
-  // Filter by category (only if not 'all')
   if (filters.categoryFilter !== "all") {
-    const categoryId = getCategoryId(filters.categoryFilter);
-    if (categoryId !== null) {
-      filtered = filtered.filter(
-        (product) => product.category_id === categoryId,
-      );
-    }
+    filtered = filtered.filter(
+      (product) => product.category_id === filters.categoryFilter,
+    );
   }
-  // When categoryFilter is 'all', show all categories
 
   return filtered;
 };
@@ -75,6 +58,7 @@ export default function ClientProducts() {
     error,
     refetch: retry,
   } = useProducts();
+  const { data: categories = [] } = useCategories();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<FilterOptions>({
@@ -131,7 +115,11 @@ export default function ClientProducts() {
         </motion.div>
 
         {/* Product Filter */}
-        <ProductFilter filters={filters} onFilterChange={setFilters} />
+        <ProductFilter
+          filters={filters}
+          onFilterChange={setFilters}
+          categories={categories}
+        />
 
         {/* Product Count and Reset */}
         <motion.div

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { profileService } from '@/services/profile/profileService';
 import { authService } from '@/services/auth/authService';
-import { isMockMode } from '@/lib/mockMode';
 
 export function useSupabaseAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -12,11 +11,6 @@ export function useSupabaseAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isMockMode()) {
-      setLoading(false);
-      return;
-    }
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -116,11 +110,6 @@ export function useSupabaseAuth() {
   };
 
   const signIn = async (email: string, password: string) => {
-    if (isMockMode()) {
-      toast.error('Sign in requires a Supabase account. Connect Supabase to enable auth.');
-      return;
-    }
-
     try {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
@@ -139,11 +128,6 @@ export function useSupabaseAuth() {
   };
 
   const signUp = async (email: string, password: string) => {
-    if (isMockMode()) {
-      toast.error('Sign up requires a Supabase account. Connect Supabase to enable auth.');
-      return;
-    }
-
     try {
       setLoading(true);
       const { error, data } = await supabase.auth.signUp({

@@ -2,15 +2,11 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/types/supabase";
-import { isMockMode } from "@/lib/mockMode";
 
-// Environment variables for client-side usage (must be prefixed with NEXT_PUBLIC_)
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!isMockMode() && (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+if (!supabaseUrl || !supabaseKey) {
   console.error("Missing Supabase environment variables");
   throw new Error("Missing Supabase environment variables");
 }

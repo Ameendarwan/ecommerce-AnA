@@ -1,19 +1,8 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import { ProductType } from '@/types';
-import { isMockMode } from '@/lib/mockMode';
-import {
-  getMockProducts,
-  getMockProductById,
-  getMockProductsByCategory,
-  searchMockProducts,
-} from '@/mock';
 
 export const productServerService = {
   async getProducts(): Promise<ProductType[]> {
-    if (isMockMode()) {
-      return getMockProducts();
-    }
-
     try {
       const supabase = await createServerSupabase();
       const { data, error } = await supabase
@@ -34,10 +23,6 @@ export const productServerService = {
   },
 
   async getProductById(id: string): Promise<ProductType | null> {
-    if (isMockMode()) {
-      return getMockProductById(id);
-    }
-
     try {
       const supabase = await createServerSupabase();
       const { data, error } = await supabase
@@ -59,10 +44,6 @@ export const productServerService = {
   },
 
   async getProductsByCategory(categoryId: number): Promise<ProductType[]> {
-    if (isMockMode()) {
-      return getMockProductsByCategory(categoryId);
-    }
-
     try {
       const supabase = await createServerSupabase();
       const { data, error } = await supabase
@@ -84,10 +65,6 @@ export const productServerService = {
   },
 
   async searchProducts(query: string): Promise<ProductType[]> {
-    if (isMockMode()) {
-      return searchMockProducts(query);
-    }
-
     try {
       const supabase = await createServerSupabase();
       const { data, error } = await supabase

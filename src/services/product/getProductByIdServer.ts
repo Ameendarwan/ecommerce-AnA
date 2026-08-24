@@ -1,15 +1,9 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import { ProductType } from '@/types';
-import { isMockMode } from '@/lib/mockMode';
-import { getMockProductById } from '@/mock';
 
 export async function getProductByIdServer(
   id: string
 ): Promise<ProductType | null> {
-  if (isMockMode()) {
-    return getMockProductById(id);
-  }
-
   try {
     const supabase = await createServerSupabase();
     const { data, error } = await supabase

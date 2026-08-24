@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 export const ErrorCodes = {
   NO_ROWS_RETURNED: 'PGRST116',
   RLS_VIOLATION: '42501',
+  FOREIGN_KEY_VIOLATION: '23503',
 };
 
 /** Substring in messages from {@link toUserFacingQueryError} for unreachable API/DB. */
@@ -125,6 +126,24 @@ export function isPostgrestError(error: unknown): error is PostgrestError {
     'message' in error &&
     'details' in error
   );
+}
+
+export function getProductDeleteErrorMessage(error: unknown): string {
+  if (
+    isPostgrestError(error) &&
+    error.code === ErrorCodes.FOREIGN_KEY_VIOLATION
+  ) {
+    if (error.message.includes('order_items')) {
+      return 'This product cannot be deleted because it appears in past orders. Set stock to 0 to hide it from the store instead.';
+    }
+    return 'This product cannot be deleted because it is linked to other records.';
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Failed to delete product';
 }
 
 /**

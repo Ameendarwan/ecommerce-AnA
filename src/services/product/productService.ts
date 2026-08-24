@@ -1,19 +1,9 @@
 import { supabase } from '@/lib/supabase/client';
 import { ProductType } from '../../types';
 import { isNoRowsError, toUserFacingQueryError } from '@/utils/errorHandling';
-import { isMockMode } from '@/lib/mockMode';
-import {
-  getMockProducts,
-  getMockProductById,
-  getMockProductsByCategory,
-} from '@/mock';
 
 export const productService = {
   async getProducts(): Promise<ProductType[]> {
-    if (isMockMode()) {
-      return getMockProducts();
-    }
-
     try {
       const { data, error } = await supabase
         .from('products')
@@ -33,10 +23,6 @@ export const productService = {
   },
 
   async getProductById(id: string): Promise<ProductType | null> {
-    if (isMockMode()) {
-      return getMockProductById(id);
-    }
-
     try {
       const { data, error } = await supabase
         .from('products')
@@ -60,10 +46,6 @@ export const productService = {
   },
 
   async getProductsByCategory(categoryId: number): Promise<ProductType[]> {
-    if (isMockMode()) {
-      return getMockProductsByCategory(categoryId);
-    }
-
     try {
       const { data, error } = await supabase
         .from('products')
