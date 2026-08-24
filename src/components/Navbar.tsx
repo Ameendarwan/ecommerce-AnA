@@ -1,8 +1,9 @@
 "use client";
-import { ShoppingCart, Moon, Sun, User, LogIn } from "lucide-react";
+import { ShoppingCart, Moon, Sun, User, LogIn, Menu } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useCart } from "@/context/CartContext";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
@@ -15,6 +16,7 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const { toggleSidebar } = useSidebar();
 
   // Handle mounting state
   useEffect(() => {
@@ -27,16 +29,35 @@ export function Navbar() {
   }
 
   return (
-    <nav className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 z-60 w-full border-b backdrop-blur">
-      <div className="mx-4 flex h-16 items-center">
-        <div className="flex items-center gap-2">
-          <SidebarTrigger className="hover:bg-muted/50 transition-colors duration-200" />
+    <nav className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 w-full border-b backdrop-blur">
+      <div className="mx-4 flex h-24 items-center">
+        <div className="flex flex-1 justify-start">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-6"
+            onClick={toggleSidebar}
+            aria-label="Open menu"
+          >
+            <Menu className="size-6" />
+          </Button>
+        </div>
+
+        <div className="flex h-24 flex-1 justify-center">
           <Link href="/" className="flex cursor-pointer items-center">
-            <h1 className="text-2xl font-bold">Used Finds</h1>
+            <Image
+              src="/brand-logo-2.png"
+              alt="Thriftonia"
+              width={160}
+              height={100}
+              className="mt-2.5 h-32 w-auto object-contain"
+              priority
+            />
           </Link>
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
+          {" "}
           <Button
             variant="ghost"
             size="icon"
@@ -50,7 +71,6 @@ export function Navbar() {
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
-
           {user ? (
             <Button
               variant="ghost"

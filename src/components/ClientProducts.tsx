@@ -7,6 +7,7 @@ import { useProducts, FilterOptions } from "@/hooks/queries";
 import { ProductType } from "@/types";
 import { ErrorState } from "@/components/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { BrandLoader } from "@/components/BrandLoader";
 import { ProductFilter } from "@/components/ProductFilter";
 import { useState, useMemo } from "react";
 
@@ -175,13 +176,8 @@ export default function ClientProducts() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex min-h-[200px] items-center justify-center"
               >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="border-primary h-8 w-8 rounded-full border-t-2 border-b-2"
-                />
+                <BrandLoader size="md" />
               </motion.div>
             ) : error ? (
               <motion.div

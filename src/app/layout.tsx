@@ -4,21 +4,23 @@ import { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/Navbar";
-import Sidebar  from "@/components/Sidebar";
+import Sidebar from "@/components/Sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TanStackQueryProvider } from "@/lib/providers/query-provider";
 import { Toaster } from "sonner";
 import { MainLayout } from "@/components/MainLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DemoBanner } from "@/components/DemoBanner";
+import { SplashScreen } from "@/components/SplashScreen";
+import { AppHeader } from "@/components/AppHeader";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "E-Commerce",
-  description: "E-Commerce App",
+  title: "Thriftonia",
+  description: "Style for less, quality for more",
 };
 
 export default function RootLayout({
@@ -27,11 +29,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn("font-sans", geist.variable)}
+    >
       <head>
-        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-        <title>My App</title>
-        <meta name="description" content="My App is a..." />
+        <link rel="icon" type="image/png" href="/loader.png" />
+        <title>Thriftonia</title>
+        <meta name="description" content="Style for less, quality for more" />
       </head>
       <body className="bg-background min-h-screen">
         <ErrorBoundary>
@@ -44,11 +50,14 @@ export default function RootLayout({
                   enableSystem
                   disableTransitionOnChange
                 >
-                  <SidebarProvider>
+                  <SidebarProvider defaultOpen={false}>
+                    <SplashScreen />
                     <Sidebar />
                     <SidebarInset>
-                      <DemoBanner />
-                      <Navbar />
+                      <AppHeader>
+                        {/* <DemoBanner /> */}
+                        <Navbar />
+                      </AppHeader>
                       <MainLayout>{children}</MainLayout>
                     </SidebarInset>
                   </SidebarProvider>
@@ -69,7 +78,6 @@ export default function RootLayout({
             },
           }}
         />
-        
       </body>
     </html>
   );

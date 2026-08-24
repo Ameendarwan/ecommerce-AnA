@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <div className="bg-background min-h-screen">
-        <div className="container mx-auto px-4">
+        <div className="px-6">
           <div className="space-y-4 py-4">
             <Suspense
               fallback={
