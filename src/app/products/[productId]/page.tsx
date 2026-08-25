@@ -34,13 +34,19 @@ export async function generateMetadata({ params }: ProductDetailsPageProps) {
     return { title: "Product Not Found", robots: { index: false, follow: false } };
   }
 
+  const image = getProductImage(product);
+  const isExternal = image.startsWith("http");
+
   return pageMetadata({
     title: product.title,
     description:
       product.description?.trim() ||
       `Shop ${product.title} at Thriftonia — style for less, quality for more.`,
     path: `/products/${product.product_id}`,
-    image: getProductImage(product),
+    image,
+    // Product photos are typically square; avoid wrong 1200×630 hints for crawlers.
+    imageWidth: isExternal ? 1200 : undefined,
+    imageHeight: isExternal ? 1200 : undefined,
   });
 }
 

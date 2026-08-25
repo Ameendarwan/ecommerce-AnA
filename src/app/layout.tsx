@@ -13,7 +13,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ClientShell } from "@/components/ClientShell";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { SITE, brandOgImage } from "@/lib/seo";
+import { SITE, brandOgImage, brandOgImageSquare } from "@/lib/seo";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -39,13 +39,13 @@ export const metadata: Metadata = {
     siteName: SITE.name,
     title: SITE.name,
     description: SITE.description,
-    images: [brandOgImage],
+    images: [brandOgImage, brandOgImageSquare],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE.name,
     description: SITE.description,
-    images: [SITE.ogImage],
+    images: [SITE.ogImage, brandOgImageSquare.url],
   },
   robots: {
     index: true,

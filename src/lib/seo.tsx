@@ -25,11 +25,30 @@ export const brandOgImage = {
   type: "image/jpeg",
 } as const;
 
+export const brandOgImageSquare = {
+  url: "/og-image-square.jpg",
+  alt: SITE.name,
+  width: 1200,
+  height: 1200,
+  type: "image/jpeg",
+} as const;
+
+/** WhatsApp/Facebook fetch images more reliably from the site domain. */
+export function resolveOgImageUrl(image: string): string {
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    return absoluteUrl(`/api/og-image?src=${encodeURIComponent(image)}`);
+  }
+  return absoluteUrl(image);
+}
+
 type PageMetaOpts = {
   title: string;
   description: string;
   path: string;
   image?: string;
+  /** Set for product pages — square photos should not use 1200×630 brand dimensions. */
+  imageWidth?: number;
+  imageHeight?: number;
 };
 
 /** Shared Metadata builder — OG + Twitter + canonical in one place. */
@@ -38,8 +57,13 @@ export function pageMetadata({
   description,
   path,
   image = SITE.ogImage,
+  imageWidth = brandOgImage.width,
+  imageHeight = brandOgImage.height,
 }: PageMetaOpts): Metadata {
   const url = absoluteUrl(path);
+  const ogImageUrl = resolveOgImageUrl(image);
+  const isBrandImage = image === SITE.ogImage || image === brandOgImageSquare.url;
+
   return {
     title,
     description,
@@ -51,21 +75,24 @@ export function pageMetadata({
       siteName: SITE.name,
       locale: SITE.locale,
       type: "website",
-      images: [
-        {
-          url: image,
-          alt: title,
-          width: brandOgImage.width,
-          height: brandOgImage.height,
-          type: brandOgImage.type,
-        },
-      ],
+      images: isBrandImage
+        ? [brandOgImage, brandOgImageSquare]
+        : [
+            {
+              url: ogImageUrl,
+              secureUrl: ogImageUrl,
+              alt: title,
+              width: imageWidth,
+              height: imageHeight,
+              type: "image/jpeg",
+            },
+          ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [image],
+      images: [ogImageUrl],
     },
   };
 }
