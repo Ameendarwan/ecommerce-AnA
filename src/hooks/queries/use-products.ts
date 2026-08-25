@@ -77,7 +77,10 @@ const handleProductError = (error: unknown): Error => {
 };
 
 // Get all products with improved caching and error handling
-export function useProducts(options?: UseQueryOptions<ProductType[]>) {
+export function useProducts(options?: Omit<
+  UseQueryOptions<ProductType[]>,
+  'queryKey' | 'queryFn'
+>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
     sortBy: 'default',
@@ -200,7 +203,7 @@ export function useProduct(
 // Get products by category with enhanced error handling
 export function useProductsByCategory(
   categoryId: number,
-  options?: UseQueryOptions<ProductType[]>
+  options?: Omit<UseQueryOptions<ProductType[]>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: productKeys.category(categoryId),

@@ -14,11 +14,15 @@ import ShoppingSkeleton from "@/components/ShoppingSkeleton";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { SHIPPING_PKR } from "@/lib/shipping";
+import { useStoreSettings } from "@/hooks/queries/use-store-settings";
+import { DEFAULT_STORE_SETTINGS } from "@/lib/storeSettingsDefaults";
 
 export default function CartShoppingPage() {
   const { cartItems, removeFromCart, updateQuantity, subtotal, isLoading } =
     useCart();
+  const { data: settings } = useStoreSettings();
+  const shippingPrice =
+    settings?.shipping_price ?? DEFAULT_STORE_SETTINGS.shipping_price;
 
   if (isLoading) {
     return <ShoppingSkeleton />;
@@ -158,13 +162,13 @@ export default function CartShoppingPage() {
                       Shipping (Pakistan)
                     </span>
                     <span className="font-medium tabular-nums">
-                      {formatCurrency(SHIPPING_PKR)}
+                      {formatCurrency(shippingPrice)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-t pt-3 text-base font-bold">
                     <span>Total</span>
                     <span className="tabular-nums">
-                      {formatCurrency(subtotal + SHIPPING_PKR)}
+                      {formatCurrency(subtotal + shippingPrice)}
                     </span>
                   </div>
                   <p className="text-muted-foreground pt-1 text-sm">

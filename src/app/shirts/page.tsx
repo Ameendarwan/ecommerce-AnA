@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import CategoryPage from "@/components/CategoryPage";
+import { CategoryPageLoader } from "@/components/CategoryPageLoader";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
   breadcrumbJsonLd,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/seo";
 
 export const metadata = categoryMetadata("Shirts", "shirts");
+export const revalidate = 60;
 
 export default function ShirtsPage() {
   return (
@@ -19,7 +20,7 @@ export default function ShirtsPage() {
         ])}
       />
       <Suspense fallback={<LoadingSpinner />}>
-        <CategoryPage categoryName="Shirts" categoryId={1} />
+        <CategoryPageLoader categoryName="Shirts" categoryId={1} />
       </Suspense>
     </>
   );

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
-import { STORE } from "@/lib/store";
+import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
+import { toStoreContact } from "@/lib/storeSettingsDefaults";
 
 export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy",
@@ -10,7 +11,10 @@ export const metadata: Metadata = pageMetadata({
   path: "/privacy",
 });
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const settings = await getStoreSettingsServer();
+  const store = toStoreContact(settings);
+
   return (
     <ContentPage
       title="Privacy Policy"
@@ -69,7 +73,7 @@ export default function PrivacyPage() {
       <h2>Contact</h2>
       <p>
         Questions about this policy? Email{" "}
-        <a href={`mailto:${STORE.email}`}>{STORE.email}</a> or visit{" "}
+        <a href={`mailto:${store.email}`}>{store.email}</a> or visit{" "}
         <Link href="/contact">Contact us</Link>.
       </p>
     </ContentPage>

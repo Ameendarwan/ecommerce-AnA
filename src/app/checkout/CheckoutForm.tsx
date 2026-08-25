@@ -15,17 +15,22 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { SHIPPING_PKR, STORE_COUNTRY } from '@/lib/shipping';
+import { STORE_COUNTRY } from '@/lib/shipping';
 import { placeCodOrder } from '@/app/checkout/placeCodOrder';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { productKeys } from '@/hooks/queries';
+import { useStoreSettings } from '@/hooks/queries/use-store-settings';
+import { DEFAULT_STORE_SETTINGS } from '@/lib/storeSettingsDefaults';
 
 export default function CheckoutForm() {
   const { cartItems, subtotal, clearCart, isLoading } = useCart();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: settings } = useStoreSettings();
+  const shippingPrice =
+    settings?.shipping_price ?? DEFAULT_STORE_SETTINGS.shipping_price;
   const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [guestName, setGuestName] = useState('');
@@ -56,7 +61,7 @@ export default function CheckoutForm() {
     );
   }
 
-  const total = subtotal + SHIPPING_PKR;
+  const total = subtotal + shippingPrice;
 
   const isValidPkPhone = (phone: string) => {
     const normalized = phone.replace(/[\s-]/g, '');
@@ -248,7 +253,7 @@ export default function CheckoutForm() {
             </div>
             <div className="flex justify-between text-sm">
               <span>Shipping</span>
-              <span>{formatCurrency(SHIPPING_PKR)}</span>
+              <span>{formatCurrency(shippingPrice)}</span>
             </div>
             <div className="flex justify-between border-t pt-3 text-lg font-bold">
               <span>Total</span>

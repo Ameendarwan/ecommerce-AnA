@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import { Input } from '@/components/ui/input'
 import { ProductCard } from '@/components/ProductCard'
 import { useProductsByCategory } from '@/hooks/queries'
+import { ProductType } from '@/types'
 import { ErrorState } from '@/components/ErrorState'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { BrandLoader } from '@/components/BrandLoader'
@@ -12,11 +12,13 @@ import { BrandLoader } from '@/components/BrandLoader'
 interface CategoryPageProps {
 	categoryName: string
 	categoryId: number
+	initialProducts?: ProductType[]
 }
 
 export default function CategoryPage({
 	categoryName,
 	categoryId,
+	initialProducts,
 }: CategoryPageProps) {
 	const [searchTerm, setSearchTerm] = useState('')
 
@@ -25,7 +27,7 @@ export default function CategoryPage({
 		isLoading: loading,
 		error,
 		refetch: fetchProducts,
-	} = useProductsByCategory(categoryId)
+	} = useProductsByCategory(categoryId, { initialData: initialProducts })
 
 	const filteredProducts = useMemo(() => {
 		if (!products) return []
@@ -48,23 +50,14 @@ export default function CategoryPage({
 			<div className="bg-background min-h-screen">
 				<div className="container mx-auto px-4">
 					<div className="space-y-4 py-4">
-						<motion.div
-							initial={{ opacity: 0, y: -10 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.3 }}
-						>
+						<div>
 							<h1 className="mb-4 text-3xl font-bold">{categoryName}</h1>
 							<p className="text-muted-foreground mb-2">
 								Pre-loved pieces — usually one of a kind
 							</p>
-						</motion.div>
+						</div>
 
-						<motion.div
-							initial={{ opacity: 0, y: -20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5 }}
-							className="mx-auto w-full max-w-md"
-						>
+						<div className="mx-auto w-full max-w-md">
 							<Input
 								type="text"
 								placeholder={`Search ${categoryName.toLowerCase()}...`}
@@ -72,81 +65,42 @@ export default function CategoryPage({
 								onChange={(e) => setSearchTerm(e.target.value)}
 								className="w-full"
 							/>
-						</motion.div>
+						</div>
 
 						<div className="mt-6">
-							<AnimatePresence mode="wait">
-								{loading ? (
-									<motion.div
-										key="loader"
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										exit={{ opacity: 0 }}
-									>
-										<BrandLoader size="md" />
-									</motion.div>
-								) : error ? (
-									<motion.div
-										key="error"
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										exit={{ opacity: 0 }}
-									>
-										<ErrorState
-											title={`Failed to load ${categoryName.toLowerCase()}`}
-											description={`We couldn't load the ${categoryName.toLowerCase()} products. Please try again.`}
-											onRetry={fetchProducts}
-											error={error}
-											type="network"
+							{loading && !initialProducts?.length ? (
+								<BrandLoader size="md" />
+							) : error ? (
+								<ErrorState
+									title={`Failed to load ${categoryName.toLowerCase()}`}
+									description={`We couldn't load the ${categoryName.toLowerCase()} products. Please try again.`}
+									onRetry={fetchProducts}
+									error={error}
+									type="network"
+								/>
+							) : filteredProducts.length === 0 ? (
+								<ErrorState
+									title={`No ${categoryName.toLowerCase()} found`}
+									description={
+										searchTerm
+											? 'Try a different search term'
+											: `No ${categoryName.toLowerCase()} are available right now.`
+									}
+									showRetry={!searchTerm}
+									onRetry={!searchTerm ? fetchProducts : undefined}
+									type="not-found"
+								/>
+							) : (
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+									{filteredProducts.map((product, index) => (
+										<ProductCard
+											key={product.product_id}
+											product={product}
+											priority={index < 4}
 										/>
-									</motion.div>
-								) : filteredProducts.length === 0 ? (
-									<motion.div
-										key="empty"
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										exit={{ opacity: 0 }}
-									>
-										<ErrorState
-											title={`No ${categoryName.toLowerCase()} found`}
-											description={
-												searchTerm
-													? 'Try a different search term'
-													: `No ${categoryName.toLowerCase()} are available right now.`
-											}
-											showRetry={!searchTerm}
-											onRetry={!searchTerm ? fetchProducts : undefined}
-											type="not-found"
-										/>
-									</motion.div>
-								) : (
-									<motion.div
-										key="products"
-										className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										exit={{ opacity: 0 }}
-										transition={{ duration: 0.3 }}
-									>
-										<AnimatePresence>
-											{filteredProducts.map((product, index) => (
-												<motion.div
-													key={product.product_id}
-													initial={{ opacity: 0, y: 20 }}
-													animate={{ opacity: 1, y: 0 }}
-													exit={{ opacity: 0, y: -20 }}
-													transition={{
-														duration: 0.3,
-														delay: index * 0.1,
-													}}
-												>
-													<ProductCard product={product} />
-												</motion.div>
-											))}
-										</AnimatePresence>
-									</motion.div>
-								)}
-							</AnimatePresence>
+									))}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

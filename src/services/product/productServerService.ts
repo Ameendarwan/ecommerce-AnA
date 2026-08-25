@@ -1,10 +1,10 @@
-import { createServerSupabase } from '@/lib/supabase/server';
+import { createPublicSupabase, createServerSupabase } from '@/lib/supabase/server';
 import { ProductType } from '@/types';
 
 export const productServerService = {
   async getProducts(): Promise<ProductType[]> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createPublicSupabase();
       const { data, error } = await supabase
         .from('products')
         .select('*, category:categories(*)')
@@ -25,7 +25,7 @@ export const productServerService = {
 
   async getProductById(id: string): Promise<ProductType | null> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createPublicSupabase();
       const { data, error } = await supabase
         .from('products')
         .select('*, category:categories(*)')
@@ -47,7 +47,7 @@ export const productServerService = {
 
   async getProductsByCategory(categoryId: number): Promise<ProductType[]> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createPublicSupabase();
       const { data, error } = await supabase
         .from('products')
         .select('*, category:categories(*)')

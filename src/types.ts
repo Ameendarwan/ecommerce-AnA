@@ -119,3 +119,17 @@ export interface CategoryType {
   parent_id?: number;
   is_visible?: boolean;
 }
+
+export interface StoreSettingsType {
+  id: number;
+  shipping_price: number;
+  phone: string;
+  email: string;
+  address: string;
+  hours: string;
+  social_tiktok: string;
+  social_youtube: string;
+  social_facebook: string;
+  social_instagram: string;
+  updated_at?: string;
+}

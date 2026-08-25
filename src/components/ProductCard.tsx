@@ -16,9 +16,10 @@ import {
 
 interface ProductCardProps {
   product: ProductType;
+  priority?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart, removeFromCart, cartItems } = useCart();
   const router = useRouter();
 
@@ -63,12 +64,14 @@ export function ProductCard({ product }: ProductCardProps) {
               alt={product.title}
               width={400}
               height={533}
+              priority={priority}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className={`h-full w-full object-cover transition-all duration-700 ease-out ${
                 hoverImage
                   ? "opacity-100 group-hover:opacity-0"
                   : "scale-100 group-hover:scale-110"
               }`}
-              loading="lazy"
+              loading={priority ? undefined : "lazy"}
             />
 
             {hoverImage && (
@@ -99,22 +102,22 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        {product.stock > 1 && product.stock <= 5 && (
+        {/* {product.stock > 1 && product.stock <= 5 && (
           <div className="absolute top-2 left-2 z-20">
             <div className="bg-accent text-accent-foreground rounded-md px-2 py-1 text-xs font-medium">
               {product.stock} left
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="absolute inset-x-0 bottom-0 z-20 p-3 opacity-100 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
           <button
             type="button"
             onClick={handleCartAction}
             disabled={!inCart && soldOut}
-            className={`flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold shadow-md transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
+            className={`flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold shadow-md backdrop-blur-sm transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
               inCart
-                ? "border-foreground text-foreground hover:bg-background border bg-white/90 backdrop-blur-sm"
+                ? "bg-background/95 text-foreground hover:bg-muted"
                 : "bg-foreground text-background hover:bg-foreground/90"
             }`}
           >

@@ -1,11 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
-// import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts, FilterOptions } from "@/hooks/queries";
-// import { useCategories } from "@/hooks/queries";
-// import { ProductFilter } from "@/components/ProductFilter";
 import { ProductType } from "@/types";
 import { ErrorState } from "@/components/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -51,14 +47,17 @@ const filterProducts = (products: ProductType[], filters: FilterOptions) => {
   return filtered;
 };
 
-export default function ClientProducts() {
-  // const { user } = useAuth(); // user is not used in this component
+export default function ClientProducts({
+  initialProducts,
+}: {
+  initialProducts?: ProductType[];
+}) {
   const {
     data: products = [],
     isLoading: loading,
     error,
     refetch: retry,
-  } = useProducts();
+  } = useProducts({ initialData: initialProducts });
   // const { data: categories = [] } = useCategories();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -155,102 +154,64 @@ export default function ClientProducts() {
         </motion.div>
         */}
 
-        {/* Products grid */}
         <div className="py-4">
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div
-                key="loader"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <BrandLoader size="md" />
-              </motion.div>
-            ) : error ? (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <ErrorState
-                  title="Failed to load products"
-                  description="We couldn't load the products. Please try again."
-                  onRetry={retry}
-                  error={error}
-                  type="network"
+          {loading && !initialProducts?.length ? (
+            <BrandLoader size="md" />
+          ) : error ? (
+            <ErrorState
+              title="Failed to load products"
+              description="We couldn't load the products. Please try again."
+              onRetry={retry}
+              error={error}
+              type="network"
+            />
+          ) : processedProducts.length === 0 ? (
+            <>
+              <ErrorState
+                title={
+                  (products?.length || 0) === 0
+                    ? "No products available"
+                    : "No products match your filters"
+                }
+                description={
+                  (products?.length || 0) === 0
+                    ? "No products are currently available. Please check back later."
+                    : searchTerm.trim() !== ""
+                      ? "Try a different search term or adjust your filters."
+                      : "Try adjusting your filters to see more products."
+                }
+                showRetry={false}
+                type="not-found"
+              />
+              {(products?.length || 0) > 0 && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        sortBy: "default",
+                        stockFilter: "all",
+                        categoryFilter: "all",
+                      });
+                      setSearchTerm("");
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-4 py-2 transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {processedProducts.map((product, index) => (
+                <ProductCard
+                  key={product.product_id}
+                  product={product}
+                  priority={index < 4}
                 />
-              </motion.div>
-            ) : processedProducts.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <ErrorState
-                  title={
-                    (products?.length || 0) === 0
-                      ? "No products available"
-                      : "No products match your filters"
-                  }
-                  description={
-                    (products?.length || 0) === 0
-                      ? "No products are currently available. Please check back later."
-                      : searchTerm.trim() !== ""
-                        ? "Try a different search term or adjust your filters."
-                        : "Try adjusting your filters to see more products."
-                  }
-                  showRetry={false}
-                  type="not-found"
-                />
-                {(products?.length || 0) > 0 && (
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={() => {
-                        setFilters({
-                          sortBy: "default",
-                          stockFilter: "all",
-                          categoryFilter: "all",
-                        });
-                        setSearchTerm("");
-                      }}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-4 py-2 transition-colors"
-                    >
-                      Clear All Filters
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="products"
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <AnimatePresence>
-                  {processedProducts.map((product, index) => (
-                    <motion.div
-                      key={product.product_id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: index * 0.1,
-                      }}
-                    >
-                      <ProductCard product={product} />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              ))}
+            </div>
+          )}
         </div>
       </>
     </ErrorBoundary>

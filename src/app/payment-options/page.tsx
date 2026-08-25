@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
-import { SHIPPING_PKR, STORE_COUNTRY, STORE_CURRENCY } from "@/lib/shipping";
+import { STORE_COUNTRY, STORE_CURRENCY } from "@/lib/shipping";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
 
 export const metadata: Metadata = pageMetadata({
   title: "Payment Options",
@@ -11,7 +12,9 @@ export const metadata: Metadata = pageMetadata({
   path: "/payment-options",
 });
 
-export default function PaymentOptionsPage() {
+export default async function PaymentOptionsPage() {
+  const settings = await getStoreSettingsServer();
+
   return (
     <ContentPage
       title="Payment Options"
@@ -26,7 +29,7 @@ export default function PaymentOptionsPage() {
       <ul>
         <li>
           Order total includes product prices plus a flat shipping fee of{" "}
-          <strong>{formatCurrency(SHIPPING_PKR)}</strong>.
+          <strong>{formatCurrency(settings.shipping_price)}</strong>.
         </li>
         <li>
           All prices are shown in <strong>{STORE_CURRENCY}</strong>.

@@ -115,6 +115,7 @@ export default function Sidebar() {
     { name: "Categories", href: "/admin/categories" },
     { name: "Orders", href: "/admin/orders" },
     { name: "Users", href: "/admin/users" },
+    { name: "Settings", href: "/admin/settings" },
   ];
 
   return (

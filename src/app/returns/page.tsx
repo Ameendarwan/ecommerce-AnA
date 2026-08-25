@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
-import { STORE } from "@/lib/store";
+import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
+import { toStoreContact } from "@/lib/storeSettingsDefaults";
 
 export const metadata: Metadata = pageMetadata({
   title: "Returns & Exchange Policy",
@@ -10,7 +11,10 @@ export const metadata: Metadata = pageMetadata({
   path: "/returns",
 });
 
-export default function ReturnsPage() {
+export default async function ReturnsPage() {
+  const settings = await getStoreSettingsServer();
+  const store = toStoreContact(settings);
+
   return (
     <ContentPage
       title="Returns & Exchange Policy"
@@ -42,8 +46,17 @@ export default function ReturnsPage() {
       <ol>
         <li>
           Message or email us at{" "}
-          <a href={`mailto:${STORE.email}`}>{STORE.email}</a> or call{" "}
-          <a href={`tel:${STORE.phone.replace(/-/g, "")}`}>{STORE.phone}</a>.
+          <a href={`mailto:${store.email}`}>{store.email}</a>
+          {store.phone && (
+            <>
+              {" "}
+              or call{" "}
+              <a href={`tel:${store.phone.replace(/-/g, "")}`}>
+                {store.phone}
+              </a>
+            </>
+          )}
+          .
         </li>
         <li>Share your order ID, reason for return, and photos if requested.</li>
         <li>

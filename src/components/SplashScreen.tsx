@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
 import { BrandLoadingContent } from "@/components/BrandLoadingScreen";
 
-const SPLASH_MIN_MS = 1200;
+/** Long enough for logo + tagline animation; shorter than original 1200ms for perf. */
+const SPLASH_MIN_MS = 1000;
 
 export function SplashScreen() {
   const { loading: authLoading } = useAuth();

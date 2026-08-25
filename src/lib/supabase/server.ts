@@ -1,6 +1,14 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
+
+/** Cookie-free client for public catalog reads (enables static/ISR). */
+export const createPublicSupabase = () =>
+  createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
 
 /**
  * Creates a Supabase client for server-side usage with proper cookie handling

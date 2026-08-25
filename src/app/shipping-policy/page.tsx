@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
-import { SHIPPING_PKR, STORE_COUNTRY } from "@/lib/shipping";
+import { STORE_COUNTRY } from "@/lib/shipping";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
 
 export const metadata: Metadata = pageMetadata({
   title: "Shipping Policy",
@@ -11,7 +12,9 @@ export const metadata: Metadata = pageMetadata({
   path: "/shipping-policy",
 });
 
-export default function ShippingPolicyPage() {
+export default async function ShippingPolicyPage() {
+  const settings = await getStoreSettingsServer();
+
   return (
     <ContentPage
       title="Shipping Policy"
@@ -26,9 +29,9 @@ export default function ShippingPolicyPage() {
       <h2>Shipping fee</h2>
       <p>
         A flat shipping fee of{" "}
-        <strong>{formatCurrency(SHIPPING_PKR)}</strong> applies to standard
-        cash-on-delivery orders. The fee is shown at checkout before you place
-        your order.
+        <strong>{formatCurrency(settings.shipping_price)}</strong> applies to
+        standard cash-on-delivery orders. The fee is shown at checkout before
+        you place your order.
       </p>
 
       <h2>Estimated delivery</h2>

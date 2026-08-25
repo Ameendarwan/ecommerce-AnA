@@ -1,12 +1,12 @@
-/** Store contact & social links — edit these as needed. */
-export const STORE = {
-  phone: "0310-0021434",
-  email: "admin@thriftonia.pk",
-  hours: "Mon–Sat: 02:00 PM to 09:00 PM",
-  socials: {
-    tiktok: "https://www.tiktok.com/@thriftonia",
-    youtube: "https://www.youtube.com/@thriftonia",
-    facebook: "https://www.facebook.com/thriftonia",
-    instagram: "https://www.instagram.com/thriftonia",
-  },
-} as const;
+/** @deprecated Use storeSettingsDefaults / useStoreSettings instead. */
+export {
+  DEFAULT_STORE_SETTINGS,
+  mergeStoreSettings,
+  toStoreContact,
+} from "@/lib/storeSettingsDefaults";
+
+import { toStoreContact } from "@/lib/storeSettingsDefaults";
+import { DEFAULT_STORE_SETTINGS } from "@/lib/storeSettingsDefaults";
+
+/** Static fallback contact info — prefer DB settings via useStoreSettings. */
+export const STORE = toStoreContact(DEFAULT_STORE_SETTINGS);

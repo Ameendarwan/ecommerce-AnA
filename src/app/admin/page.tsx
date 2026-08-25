@@ -243,6 +243,12 @@ export default function AdminDashboard() {
                 Manage Users
               </Button>
             </Link>
+            <Link href="/admin/settings">
+              <Button className="w-full cursor-pointer" variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Store Settings
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

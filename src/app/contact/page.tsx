@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
-import { STORE } from "@/lib/store";
+import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
+import { toStoreContact } from "@/lib/storeSettingsDefaults";
 
 export const metadata: Metadata = pageMetadata({
   title: "Contact Us",
@@ -9,7 +10,10 @@ export const metadata: Metadata = pageMetadata({
   path: "/contact",
 });
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getStoreSettingsServer();
+  const store = toStoreContact(settings);
+
   return (
     <ContentPage
       title="Contact Us"
@@ -17,17 +21,28 @@ export default function ContactPage() {
     >
       <h2>Reach us</h2>
       <ul>
-        <li>
-          <strong>Phone:</strong>{" "}
-          <a href={`tel:${STORE.phone.replace(/-/g, "")}`}>{STORE.phone}</a>
-        </li>
-        <li>
-          <strong>Email:</strong>{" "}
-          <a href={`mailto:${STORE.email}`}>{STORE.email}</a>
-        </li>
-        <li>
-          <strong>Hours:</strong> {STORE.hours}
-        </li>
+        {store.phone && (
+          <li>
+            <strong>Phone:</strong>{" "}
+            <a href={`tel:${store.phone.replace(/-/g, "")}`}>{store.phone}</a>
+          </li>
+        )}
+        {store.email && (
+          <li>
+            <strong>Email:</strong>{" "}
+            <a href={`mailto:${store.email}`}>{store.email}</a>
+          </li>
+        )}
+        {store.address && (
+          <li>
+            <strong>Address:</strong> {store.address}
+          </li>
+        )}
+        {store.hours && (
+          <li>
+            <strong>Hours:</strong> {store.hours}
+          </li>
+        )}
       </ul>
 
       <h2>Order support</h2>
@@ -40,21 +55,51 @@ export default function ContactPage() {
       <h2>Social</h2>
       <p>
         Follow {SITE.name} for new drops and style inspo on{" "}
-        <a href={STORE.socials.instagram} target="_blank" rel="noopener noreferrer">
-          Instagram
-        </a>
-        ,{" "}
-        <a href={STORE.socials.tiktok} target="_blank" rel="noopener noreferrer">
-          TikTok
-        </a>
-        ,{" "}
-        <a href={STORE.socials.facebook} target="_blank" rel="noopener noreferrer">
-          Facebook
-        </a>
-        , and{" "}
-        <a href={STORE.socials.youtube} target="_blank" rel="noopener noreferrer">
-          YouTube
-        </a>
+        {store.socials.instagram && (
+          <>
+            <a
+              href={store.socials.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Instagram
+            </a>
+            ,{" "}
+          </>
+        )}
+        {store.socials.tiktok && (
+          <>
+            <a
+              href={store.socials.tiktok}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              TikTok
+            </a>
+            ,{" "}
+          </>
+        )}
+        {store.socials.facebook && (
+          <>
+            <a
+              href={store.socials.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Facebook
+            </a>
+            , and{" "}
+          </>
+        )}
+        {store.socials.youtube && (
+          <a
+            href={store.socials.youtube}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            YouTube
+          </a>
+        )}
         .
       </p>
     </ContentPage>

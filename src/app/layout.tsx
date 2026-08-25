@@ -7,17 +7,19 @@ import { Navbar } from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TanStackQueryProvider } from "@/lib/providers/query-provider";
-import { Toaster } from "sonner";
 import { MainLayout } from "@/components/MainLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { SplashScreen } from "@/components/SplashScreen";
 import { AppHeader } from "@/components/AppHeader";
-import { CatalogRealtimeSync } from "@/components/CatalogRealtimeSync";
+import { ClientShell } from "@/components/ClientShell";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SITE, brandOgImage } from "@/lib/seo";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -65,7 +67,6 @@ export default function RootLayout({
       <body className="bg-background min-h-screen">
         <ErrorBoundary>
           <TanStackQueryProvider>
-            <CatalogRealtimeSync />
             <AuthProvider>
               <CartProvider>
                 <ThemeProvider
@@ -75,7 +76,7 @@ export default function RootLayout({
                   disableTransitionOnChange
                 >
                   <SidebarProvider defaultOpen={false}>
-                    <SplashScreen />
+                    <ClientShell />
                     <Sidebar />
                     <SidebarInset>
                       <AppHeader>
@@ -89,18 +90,6 @@ export default function RootLayout({
             </AuthProvider>
           </TanStackQueryProvider>
         </ErrorBoundary>
-        <Toaster
-          theme="light" // or "dark" or "system"
-          toastOptions={{
-            unstyled: false,
-            classNames: {
-              error: "bg-red-500 text-white border-red-600",
-              success: "bg-green-500 text-white border-green-600",
-              warning: "bg-yellow-500 text-black border-yellow-600",
-              info: "bg-blue-500 text-white border-blue-600",
-            },
-          }}
-        />
       </body>
     </html>
   );

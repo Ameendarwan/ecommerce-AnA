@@ -10,6 +10,8 @@ import {
   SITE,
 } from "@/lib/seo";
 
+export const revalidate = 60;
+
 interface ProductDetailsPageProps {
   params: Promise<{ productId: string }>;
 }

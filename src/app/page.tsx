@@ -2,8 +2,13 @@ import { Suspense } from "react";
 import ClientProducts from "@/components/ClientProducts";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { productServerService } from "@/services/product/productServerService";
 
-export default function Home() {
+export const revalidate = 60;
+
+export default async function Home() {
+  const products = await productServerService.getProducts();
+
   return (
     <ErrorBoundary>
       <JsonLd data={organizationJsonLd} />
@@ -18,7 +23,7 @@ export default function Home() {
                 </div>
               }
             >
-              <ClientProducts />
+              <ClientProducts initialProducts={products} />
             </Suspense>
           </div>
         </div>

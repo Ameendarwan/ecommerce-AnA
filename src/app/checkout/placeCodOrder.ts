@@ -1,7 +1,8 @@
 'use server';
 
 import { createServiceRoleSupabase } from '@/lib/supabase/serviceRole';
-import { SHIPPING_PKR } from '@/lib/shipping';
+import { getStoreSettingsServer } from '@/services/settings/getStoreSettingsServer';
+import { DEFAULT_STORE_SETTINGS } from '@/lib/storeSettingsDefaults';
 import { revalidateCatalog } from '@/lib/cache/revalidateCatalog';
 
 export interface CodCartLine {
@@ -147,7 +148,10 @@ export async function placeCodOrder(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const total = subtotal + SHIPPING_PKR;
+  const storeSettings = await getStoreSettingsServer();
+  const shippingFee =
+    storeSettings.shipping_price ?? DEFAULT_STORE_SETTINGS.shipping_price;
+  const total = subtotal + shippingFee;
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return { ok: false, error: 'Order service is not configured' };
@@ -217,7 +221,7 @@ export async function placeCodOrder(
         shipping_street: street,
         shipping_city: city,
         shipping_notes: notes,
-        shipping_fee: SHIPPING_PKR,
+        shipping_fee: shippingFee,
       } as Record<string, unknown>)
       .select('id')
       .single();
@@ -325,7 +329,7 @@ export async function getCodOrderSummary(
     return {
       orderId: order.id,
       total: order.total,
-      shippingFee: order.shipping_fee ?? SHIPPING_PKR,
+      shippingFee: order.shipping_fee ?? DEFAULT_STORE_SETTINGS.shipping_price,
       guestName: order.guest_name ?? null,
       shippingCity: order.shipping_city ?? null,
       items,

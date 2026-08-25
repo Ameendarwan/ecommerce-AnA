@@ -21,9 +21,10 @@ import {
   Check,
 } from "lucide-react";
 import Image from "next/image";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { SHIPPING_PKR } from "@/lib/shipping";
+import { useStoreSettings } from "@/hooks/queries/use-store-settings";
+import { DEFAULT_STORE_SETTINGS } from "@/lib/storeSettingsDefaults";
 import { ReviewTab } from "./_components/review-tab";
 import {
   getProductSalePrice,
@@ -40,7 +41,12 @@ export default function ProductDetailsClient({
   product: initialProduct,
 }: ProductDetailsClientProps) {
   const { addToCart, cartItems } = useCart();
-  const { data: liveProduct } = useProduct(initialProduct.product_id);
+  const { data: settings } = useStoreSettings();
+  const shippingPrice =
+    settings?.shipping_price ?? DEFAULT_STORE_SETTINGS.shipping_price;
+  const { data: liveProduct } = useProduct(initialProduct.product_id, {
+    initialData: initialProduct,
+  });
   const product = liveProduct ?? initialProduct;
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -109,32 +115,24 @@ export default function ProductDetailsClient({
           {/* Product Images */}
           <div className="space-y-4">
             <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={selectedImageIndex}
-                  className="relative h-full w-full"
-                  initial={{ opacity: 0, scale: 1.1 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {product.image ? (
-                    <Image
-                      src={productImages[selectedImageIndex]}
-                      alt={product.title}
-                      fill
-                      className="object-contain"
-                      loading="eager"
-                    />
-                  ) : (
-                    <div className="bg-muted flex h-full w-full items-center justify-center">
-                      <span className="text-muted-foreground text-sm">
-                        No image available
-                      </span>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+              <div className="relative h-full w-full">
+                {productImages[selectedImageIndex] ? (
+                  <Image
+                    src={productImages[selectedImageIndex]}
+                    alt={product.title}
+                    fill
+                    priority={selectedImageIndex === 0}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-contain"
+                  />
+                ) : (
+                  <div className="bg-muted flex h-full w-full items-center justify-center">
+                    <span className="text-muted-foreground text-sm">
+                      No image available
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {productImages.length > 1 && (
                 <>
@@ -208,6 +206,8 @@ export default function ProductDetailsClient({
                       alt={`${product.title} ${index + 1}`}
                       width={100}
                       height={100}
+                      loading="lazy"
+                      sizes="96px"
                       className="h-full w-full object-cover"
                     />
                   </motion.button>
@@ -374,7 +374,7 @@ export default function ProductDetailsClient({
                 <div>
                   <p className="text-sm font-medium">Pakistan Shipping</p>
                   <p className="text-muted-foreground text-xs">
-                    Flat {formatCurrency(SHIPPING_PKR)} COD
+                    Flat {formatCurrency(shippingPrice)} COD
                   </p>
                 </div>
               </div>
