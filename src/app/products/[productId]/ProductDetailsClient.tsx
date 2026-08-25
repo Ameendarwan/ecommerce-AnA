@@ -41,7 +41,7 @@ export default function ProductDetailsClient({
 
   const uniqueItem = product.stock <= 1;
   const alreadyInCart = cartItems.some(
-    (item) => item.product_id === product.product_id
+    (item) => item.product_id === product.product_id,
   );
   const soldOut = product.stock <= 0;
 
@@ -86,7 +86,7 @@ export default function ProductDetailsClient({
 
   const prevImage = () => {
     setSelectedImageIndex(
-      (prev) => (prev - 1 + productImages.length) % productImages.length
+      (prev) => (prev - 1 + productImages.length) % productImages.length,
     );
   };
 
@@ -318,7 +318,7 @@ export default function ProductDetailsClient({
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart —{" "}
                     {formatCurrency(
-                      product.price * (uniqueItem ? 1 : quantity)
+                      product.price * (uniqueItem ? 1 : quantity),
                     )}
                   </>
                 )}
@@ -395,7 +395,7 @@ export default function ProductDetailsClient({
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-                <ReviewTab product={product} />
+              <ReviewTab product={product} />
             </TabsContent>
           </Tabs>
         </motion.div>

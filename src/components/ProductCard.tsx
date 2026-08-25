@@ -2,10 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ProductType } from "@/types";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Heart, Eye, Badge } from "lucide-react";
+import { ShoppingCart, Heart, Eye, Badge as BadgeIcon } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -89,7 +90,7 @@ export function ProductCard({ product }: ProductCardProps) {
         ) : (
           <div className="bg-muted/50 flex h-full w-full items-center justify-center">
             <div className="text-center">
-              <Badge className="text-muted-foreground/40 mb-2 h-8 w-8" />
+              <BadgeIcon className="text-muted-foreground/40 mb-2 h-8 w-8" />
               <span className="text-muted-foreground/60 text-xs font-medium">
                 No Image
               </span>
@@ -137,12 +138,23 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardContent className="space-y-2 p-3">
         {/* Stock Status */}
         <div className="flex items-center justify-end">
-          <div className="flex items-center gap-1">
-            <div className="bg-primary h-1 w-1 rounded-full"></div>
-            <span className="text-primary text-xs font-medium">
-              {soldOut ? "Sold out" : uniqueItem ? "Unique" : "In Stock"}
-            </span>
-          </div>
+          {soldOut ? (
+            <Badge variant="destructive">Sold out</Badge>
+          ) : uniqueItem ? (
+            <Badge
+              variant="secondary"
+              className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200"
+            >
+              Unique
+            </Badge>
+          ) : (
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+            >
+              In Stock
+            </Badge>
+          )}
         </div>
 
         {/* Product Title */}

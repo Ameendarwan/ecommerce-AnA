@@ -14,12 +14,40 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { AppHeader } from "@/components/AppHeader";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { SITE, brandOgImage } from "@/lib/seo";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Thriftonia",
-  description: "Style for less, quality for more",
+  metadataBase: new URL(SITE.url),
+  title: {
+    default: SITE.name,
+    template: `%s | ${SITE.name}`,
+  },
+  description: SITE.description,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: SITE.locale,
+    url: SITE.url,
+    siteName: SITE.name,
+    title: SITE.name,
+    description: SITE.description,
+    images: [brandOgImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE.name,
+    description: SITE.description,
+    images: [SITE.ogImage],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: { url: "/loader.png", type: "image/png" },
+  },
 };
 
 export default function RootLayout({
@@ -33,11 +61,6 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("font-sans", geist.variable)}
     >
-      <head>
-        <link rel="icon" type="image/png" href="/loader.png" />
-        <title>Thriftonia</title>
-        <meta name="description" content="Style for less, quality for more" />
-      </head>
       <body className="bg-background min-h-screen">
         <ErrorBoundary>
           <TanStackQueryProvider>

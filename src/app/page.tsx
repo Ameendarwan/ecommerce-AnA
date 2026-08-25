@@ -1,10 +1,17 @@
 import { Suspense } from "react";
 import ClientProducts from "@/components/ClientProducts";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import {
+  JsonLd,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "@/lib/seo";
 
 export default function Home() {
   return (
     <ErrorBoundary>
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={websiteJsonLd} />
       <div className="bg-background min-h-screen">
         <div className="px-6">
           <div className="space-y-4 py-4">
