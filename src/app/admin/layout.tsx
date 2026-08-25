@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   if (!loading && (error || !isAdmin)) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-red-600">Access Denied</CardTitle>

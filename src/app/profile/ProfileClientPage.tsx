@@ -165,7 +165,7 @@ export default function ProfileClientPage({
   }, [user.id]);
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="py-6">
       <ProfileCard
         user={user}
         username={username}

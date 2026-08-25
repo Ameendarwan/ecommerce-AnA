@@ -9,6 +9,7 @@ import {
   pageMetadata,
   SITE,
 } from "@/lib/seo";
+import { LcpImagePreload } from "@/components/LcpImagePreload";
 
 export const revalidate = 60;
 
@@ -56,6 +57,12 @@ export default async function ProductDetailsPage({
 
   return (
     <>
+      <LcpImagePreload
+        src={image}
+        width={828}
+        height={828}
+        sizes="(max-width: 1024px) 100vw, 50vw"
+      />
       <JsonLd
         data={{
           "@context": "https://schema.org",

@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="container mx-auto py-12">
+      <div className="py-12">
         <Card>
           <CardHeader>
             <CardTitle>Please Sign In</CardTitle>
@@ -47,7 +47,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="py-8">
       <div className="flex flex-col space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
 

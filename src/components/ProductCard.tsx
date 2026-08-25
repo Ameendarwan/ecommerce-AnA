@@ -65,6 +65,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
               width={400}
               height={533}
               priority={priority}
+              quality={75}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className={`h-full w-full object-cover transition-all duration-700 ease-out ${
                 hoverImage
@@ -137,7 +138,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           {product.title}
         </h3>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-h-[3.25rem]">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
             {onSale && (
               <span className="text-muted-foreground text-sm line-through">

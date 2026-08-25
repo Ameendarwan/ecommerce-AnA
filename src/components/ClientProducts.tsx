@@ -207,7 +207,7 @@ export default function ClientProducts({
                 <ProductCard
                   key={product.product_id}
                   product={product}
-                  priority={index < 4}
+                  priority={index === 0}
                 />
               ))}
             </div>

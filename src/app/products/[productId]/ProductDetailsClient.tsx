@@ -109,9 +109,8 @@ export default function ProductDetailsClient({
   };
 
   return (
-    <div className="bg-background min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
+    <div className="py-8">
+      <div className="mb-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Product Images */}
           <div className="space-y-4">
             <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
@@ -122,6 +121,7 @@ export default function ProductDetailsClient({
                     alt={product.title}
                     fill
                     priority={selectedImageIndex === 0}
+                    quality={75}
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-contain"
                   />
@@ -442,7 +442,6 @@ export default function ProductDetailsClient({
             </TabsContent>
           </Tabs>
         </motion.div>
-      </div>
     </div>
   );
 }

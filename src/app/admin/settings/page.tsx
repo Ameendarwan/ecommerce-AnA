@@ -100,7 +100,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-6 py-8">
+    <div className="mx-auto max-w-3xl space-y-6 py-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Store Settings</h1>
         <p className="text-muted-foreground">

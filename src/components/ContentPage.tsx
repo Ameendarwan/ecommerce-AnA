@@ -9,7 +9,7 @@ interface ContentPageProps {
 export function ContentPage({ title, description, children }: ContentPageProps) {
   return (
     <div className="bg-background min-h-[60vh]">
-      <div className="mx-auto max-w-3xl px-6 py-12 lg:px-8">
+      <div className="mx-auto max-w-3xl py-12">
         <header className="mb-8 space-y-2">
           <h1 className="text-foreground text-3xl font-bold tracking-tight">
             {title}

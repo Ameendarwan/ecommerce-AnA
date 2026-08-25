@@ -41,7 +41,7 @@ export default function CheckoutForm() {
 
   if (isLoading || redirecting) {
     return (
-      <div className="container mx-auto flex min-h-[40vh] flex-col items-center justify-center gap-3 p-4">
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 py-4">
         <LoadingSpinner />
         <p className="text-muted-foreground">
           {redirecting ? 'Confirming your order…' : 'Loading checkout…'}
@@ -52,7 +52,7 @@ export default function CheckoutForm() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="container mx-auto p-4 text-center">
+      <div className="py-4 text-center">
         <h1 className="mb-4 text-2xl font-bold">Your cart is empty</h1>
         <Link href="/">
           <Button className="w-full sm:w-auto">Continue Shopping</Button>
@@ -144,7 +144,7 @@ export default function CheckoutForm() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl p-4">
+    <div className="mx-auto max-w-4xl py-4">
       <h1 className="mb-6 text-3xl font-bold">Checkout</h1>
 
       <form

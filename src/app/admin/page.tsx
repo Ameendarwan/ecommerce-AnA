@@ -110,7 +110,7 @@ export default function AdminDashboard() {
 
   if (adminError || !isAdmin) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-red-600">Access Denied</CardTitle>
@@ -130,7 +130,7 @@ export default function AdminDashboard() {
 
   if (!stats) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="py-8">
         <Card>
           <CardContent className="pt-6">
             <p>Unable to load dashboard data. Please try again later.</p>
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 py-8">
+    <div className="space-y-6 py-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>

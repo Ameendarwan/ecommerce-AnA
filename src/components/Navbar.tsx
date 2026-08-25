@@ -23,9 +23,16 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  // Prevent hydration mismatch by not rendering theme-dependent content until mounted
+  // Placeholder keeps header height stable before theme hydrates (prevents CLS).
   if (!mounted) {
-    return null; // Return null on first render to avoid hydration mismatch
+    return (
+      <nav
+        className="border-border bg-background/95 w-full border-b"
+        aria-hidden
+      >
+        <div className="mx-4 flex h-24 items-center" />
+      </nav>
+    );
   }
 
   return (
