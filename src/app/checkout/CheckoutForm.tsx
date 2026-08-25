@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -16,6 +16,11 @@ import {
 } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { STORE_COUNTRY } from '@/lib/shipping';
+import {
+  clearSavedCheckoutDetails,
+  getSavedCheckoutDetails,
+  saveCheckoutDetails,
+} from '@/lib/savedCheckoutDetails';
 import { placeCodOrder } from '@/app/checkout/placeCodOrder';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
@@ -38,6 +43,19 @@ export default function CheckoutForm() {
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   const [notes, setNotes] = useState('');
+  const [saveDetails, setSaveDetails] = useState(true);
+
+  useEffect(() => {
+    const saved = getSavedCheckoutDetails();
+    if (saved) {
+      setGuestName(saved.guestName);
+      setGuestPhone(saved.guestPhone);
+      setStreet(saved.street);
+      setCity(saved.city);
+      setNotes(saved.notes);
+      setSaveDetails(true);
+    }
+  }, []);
 
   if (isLoading || redirecting) {
     return (
@@ -121,6 +139,18 @@ export default function CheckoutForm() {
       if (!result.ok) {
         toast.error(result.error);
         return;
+      }
+
+      if (saveDetails) {
+        saveCheckoutDetails({
+          guestName: guestName.trim(),
+          guestPhone: guestPhone.trim(),
+          street: street.trim(),
+          city: city.trim(),
+          notes: notes.trim(),
+        });
+      } else {
+        clearSavedCheckoutDetails();
       }
 
       // Refresh product stock/availability on the storefront immediately
@@ -222,6 +252,27 @@ export default function CheckoutForm() {
                 placeholder="Landmark, preferred delivery time…"
               />
             </div>
+            <label
+              htmlFor="saveDetails"
+              className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 bg-muted/30 px-3 py-3"
+            >
+              <input
+                id="saveDetails"
+                type="checkbox"
+                checked={saveDetails}
+                onChange={(e) => setSaveDetails(e.target.checked)}
+                className="border-input text-primary mt-0.5 size-4 shrink-0 cursor-pointer rounded accent-current"
+              />
+              <span className="space-y-0.5">
+                <span className="block text-sm font-medium text-foreground">
+                  Save my details for next time
+                </span>
+                <span className="text-muted-foreground block text-xs">
+                  We&apos;ll autofill your name, phone, and address on this
+                  device.
+                </span>
+              </span>
+            </label>
             <p className="text-muted-foreground text-sm">
               Payment method: <strong>Cash on Delivery (COD)</strong> — pay when
               your order arrives. No online payment required.

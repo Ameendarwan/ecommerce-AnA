@@ -76,7 +76,7 @@ export function pageMetadata({
       locale: SITE.locale,
       type: "website",
       images: isBrandImage
-        ? [brandOgImage, brandOgImageSquare]
+        ? [{ url: absoluteUrl("/api/og-image"), width: 1200, height: 630, alt: SITE.name, type: "image/png" }]
         : [
             {
               url: ogImageUrl,

@@ -111,52 +111,52 @@ export default function ProductDetailsClient({
   return (
     <div className="py-8">
       <div className="mb-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Product Images */}
-          <div className="space-y-4">
-            <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-              <div className="relative h-full w-full">
-                {productImages[selectedImageIndex] ? (
-                  <Image
-                    src={productImages[selectedImageIndex]}
-                    alt={product.title}
-                    fill
-                    priority={selectedImageIndex === 0}
-                    quality={75}
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-contain"
-                  />
-                ) : (
-                  <div className="bg-muted flex h-full w-full items-center justify-center">
-                    <span className="text-muted-foreground text-sm">
-                      No image available
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {productImages.length > 1 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-background/80 absolute top-1/2 left-4 -translate-y-1/2 backdrop-blur-sm"
-                    onClick={prevImage}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-background/80 absolute top-1/2 right-4 -translate-y-1/2 backdrop-blur-sm"
-                    onClick={nextImage}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </>
+        {/* Product Images */}
+        <div className="space-y-4">
+          <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
+            <div className="relative h-full w-full">
+              {productImages[selectedImageIndex] ? (
+                <Image
+                  src={productImages[selectedImageIndex]}
+                  alt={product.title}
+                  fill
+                  priority={selectedImageIndex === 0}
+                  quality={75}
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-contain"
+                />
+              ) : (
+                <div className="bg-muted flex h-full w-full items-center justify-center">
+                  <span className="text-muted-foreground text-sm">
+                    No image available
+                  </span>
+                </div>
               )}
+            </div>
 
-              {/* Heart + Share
+            {productImages.length > 1 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-background/80 absolute top-1/2 left-4 -translate-y-1/2 backdrop-blur-sm"
+                  onClick={prevImage}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-background/80 absolute top-1/2 right-4 -translate-y-1/2 backdrop-blur-sm"
+                  onClick={nextImage}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+
+            {/* Heart + Share
               <div className="absolute top-4 right-4 flex gap-2">
                 <Button
                   variant="outline"
@@ -180,55 +180,55 @@ export default function ProductDetailsClient({
               </div>
               */}
 
-              {product.show_sale_tag && (
-                <div className="absolute top-0 right-0 z-20 bg-black px-2.5 py-1 text-[11px] leading-none font-medium text-white">
-                  Sale
-                </div>
-              )}
-            </div>
-
-            {productImages.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {productImages.map((image, index) => (
-                  <motion.button
-                    key={index}
-                    className={`aspect-square cursor-pointer overflow-hidden rounded-lg border-2 transition-colors ${
-                      selectedImageIndex === index
-                        ? "border-primary"
-                        : "border-border"
-                    }`}
-                    onClick={() => setSelectedImageIndex(index)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${product.title} ${index + 1}`}
-                      width={100}
-                      height={100}
-                      loading="lazy"
-                      sizes="96px"
-                      className="h-full w-full object-cover"
-                    />
-                  </motion.button>
-                ))}
+            {product.show_sale_tag && (
+              <div className="absolute top-0 right-0 z-20 bg-black px-2.5 py-1 text-[11px] leading-none font-medium text-white">
+                Sale
               </div>
             )}
           </div>
 
-          {/* Product Information */}
-          <div className="space-y-6">
-            <div>
-              <motion.h1
-                className="text-foreground mb-2 text-3xl font-bold"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                {product.title}
-              </motion.h1>
+          {productImages.length > 1 && (
+            <div className="grid grid-cols-4 gap-2">
+              {productImages.map((image, index) => (
+                <motion.button
+                  key={index}
+                  className={`aspect-square cursor-pointer overflow-hidden rounded-lg border-2 transition-colors ${
+                    selectedImageIndex === index
+                      ? "border-primary"
+                      : "border-border"
+                  }`}
+                  onClick={() => setSelectedImageIndex(index)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Image
+                    src={image}
+                    alt={`${product.title} ${index + 1}`}
+                    width={100}
+                    height={100}
+                    loading="lazy"
+                    sizes="96px"
+                    className="h-full w-full object-cover"
+                  />
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </div>
 
-              {/* <motion.div
+        {/* Product Information */}
+        <div className="space-y-6">
+          <div>
+            <motion.h1
+              className="text-foreground mb-2 text-3xl font-bold"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              {product.title}
+            </motion.h1>
+
+            {/* <motion.div
                 className="mb-4 flex items-center gap-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -237,211 +237,211 @@ export default function ProductDetailsClient({
                 <RenderStars rating={product.rating || 0} size="sm" />
               </motion.div> */}
 
-              <motion.div
-                className="mb-6 space-y-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  {onSale && (
-                    <span className="text-muted-foreground text-xl line-through">
-                      {formatCurrency(product.price)}
-                    </span>
-                  )}
-                  <span className="text-foreground text-3xl font-bold">
-                    {formatCurrency(salePrice)}
-                  </span>
-                </div>
+            <motion.div
+              className="mb-6 space-y-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 {onSale && (
-                  <span className="inline-flex rounded-full bg-[#f05a2d] px-3.5 py-1 text-xs font-bold tracking-wide text-white uppercase">
-                    {discountPercent}% OFF
+                  <span className="text-muted-foreground text-xl line-through">
+                    {formatCurrency(product.price)}
                   </span>
                 )}
-                <div className="flex flex-wrap items-center gap-3">
-                  {(product.show_badge ?? true) && (
-                    <Badge variant="secondary">
-                      {product.badge === "new" ? "New" : "Used"}
-                    </Badge>
-                  )}
-                  {soldOut ? (
-                    <Badge variant="destructive">Sold Out</Badge>
-                  ) : uniqueItem ? (
-                    <Badge
-                      variant="secondary"
-                      className="bg-amber-100 text-amber-900"
-                    >
-                      Unique used item — 1 available
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-800"
-                    >
-                      In Stock ({product.stock} available)
-                    </Badge>
-                  )}
-                </div>
-              </motion.div>
-            </div>
-
-            <motion.p
-              className="text-muted-foreground leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              {product.description}
-            </motion.p>
-
-            {/* Quantity and Add to Cart */}
-            <motion.div
-              className="space-y-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div>
-                {!uniqueItem && (
-                  <>
-                    <h3 className="mb-3 font-medium">Quantity</h3>
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="border-border flex items-center rounded-lg border">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={decrementQuantity}
-                          disabled={quantity <= 1}
-                          className="cursor-pointer"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="min-w-[60px] px-4 py-2 text-center">
-                          {quantity}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={incrementQuantity}
-                          disabled={quantity >= product.stock}
-                          className="cursor-pointer"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <span className="text-muted-foreground text-sm">
-                        {product.stock} available
-                      </span>
-                    </div>
-                  </>
-                )}
+                <span className="text-foreground text-3xl font-bold">
+                  {formatCurrency(salePrice)}
+                </span>
               </div>
-
-              <Button
-                size="lg"
-                className="w-full cursor-pointer"
-                disabled={soldOut || (uniqueItem && alreadyInCart)}
-                onClick={handleAddToCart}
-              >
-                {isAddedToCart ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Added to Cart!
-                  </>
-                ) : soldOut ? (
-                  "Sold Out"
-                ) : uniqueItem && alreadyInCart ? (
-                  "Already in Cart"
+              {onSale && (
+                <span className="inline-flex rounded-full bg-[#f05a2d] px-3.5 py-1 text-xs font-bold tracking-wide text-white uppercase">
+                  {discountPercent}% OFF
+                </span>
+              )}
+              <div className="flex flex-wrap items-center gap-3">
+                {(product.show_badge ?? true) && (
+                  <Badge variant="secondary">
+                    {product.badge === "new" ? "New" : "Used"}
+                  </Badge>
+                )}
+                {soldOut ? (
+                  <Badge variant="destructive">Sold Out</Badge>
+                ) : uniqueItem ? (
+                  <Badge
+                    variant="secondary"
+                    className="bg-amber-100 text-amber-900"
+                  >
+                    Unique used item — 1 available
+                  </Badge>
                 ) : (
-                  <>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Add to Cart —{" "}
-                    {formatCurrency(salePrice * (uniqueItem ? 1 : quantity))}
-                  </>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-800"
+                  >
+                    In Stock ({product.stock} available)
+                  </Badge>
                 )}
-              </Button>
-            </motion.div>
-
-            {/* Shipping Info */}
-            <motion.div
-              className="border-border grid grid-cols-1 gap-4 border-t pt-6 sm:grid-cols-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <div className="flex items-center gap-3">
-                <Truck className="text-primary h-5 w-5" />
-                <div>
-                  <p className="text-sm font-medium">Pakistan Shipping</p>
-                  <p className="text-muted-foreground text-xs">
-                    Flat {formatCurrency(shippingPrice)} COD
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Shield className="text-primary h-5 w-5" />
-                <div>
-                  <p className="text-sm font-medium">Cash on Delivery</p>
-                  <p className="text-muted-foreground text-xs">
-                    Pay when you receive
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <RotateCcw className="text-primary h-5 w-5" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {(product.show_badge ?? true)
-                      ? product.badge === "new"
-                        ? "New"
-                        : "Pre-loved"
-                      : "Quality checked"}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    Usually one of a kind
-                  </p>
-                </div>
               </div>
             </motion.div>
           </div>
-        </div>
 
-        {/* Product Details Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-        >
-          <Tabs defaultValue="description" className="mb-12">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            </TabsList>
+          <motion.p
+            className="text-muted-foreground leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {product.description}
+          </motion.p>
 
-            <TabsContent value="description" className="mt-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-muted-foreground mb-4 leading-relaxed">
-                      {product.description}
-                    </p>
-                    {product.sku && (
-                      <div className="border-border mt-4 border-t pt-4">
-                        <p className="text-muted-foreground text-sm">
-                          <strong>SKU:</strong> {product.sku}
-                        </p>
-                      </div>
-                    )}
+          {/* Quantity and Add to Cart */}
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div>
+              {!uniqueItem && (
+                <>
+                  <h3 className="mb-3 font-medium">Quantity</h3>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="border-border flex items-center rounded-lg border">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={decrementQuantity}
+                        disabled={quantity <= 1}
+                        className="cursor-pointer"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="min-w-[60px] px-4 py-2 text-center">
+                        {quantity}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={incrementQuantity}
+                        disabled={quantity >= product.stock}
+                        className="cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <span className="text-muted-foreground text-sm">
+                      {product.stock} available
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </>
+              )}
+            </div>
 
-            <TabsContent value="reviews" className="mt-6">
-              <ReviewTab product={product} />
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+            <Button
+              size="lg"
+              className="w-full cursor-pointer"
+              disabled={soldOut || (uniqueItem && alreadyInCart)}
+              onClick={handleAddToCart}
+            >
+              {isAddedToCart ? (
+                <>
+                  <Check className="mr-2 size-6" />
+                  Added to Cart!
+                </>
+              ) : soldOut ? (
+                "Sold Out"
+              ) : uniqueItem && alreadyInCart ? (
+                "Already in Cart"
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 size-6" />
+                  Add to Cart —{" "}
+                  {formatCurrency(salePrice * (uniqueItem ? 1 : quantity))}
+                </>
+              )}
+            </Button>
+          </motion.div>
+
+          {/* Shipping Info */}
+          <motion.div
+            className="border-border grid grid-cols-1 gap-4 border-t pt-6 sm:grid-cols-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <div className="flex items-center gap-3">
+              <Truck className="text-primary h-5 w-5" />
+              <div>
+                <p className="text-sm font-medium">Pakistan Shipping</p>
+                <p className="text-muted-foreground text-xs">
+                  Flat {formatCurrency(shippingPrice)} COD
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Shield className="text-primary h-5 w-5" />
+              <div>
+                <p className="text-sm font-medium">Cash on Delivery</p>
+                <p className="text-muted-foreground text-xs">
+                  Pay when you receive
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <RotateCcw className="text-primary h-5 w-5" />
+              <div>
+                <p className="text-sm font-medium">
+                  {(product.show_badge ?? true)
+                    ? product.badge === "new"
+                      ? "New"
+                      : "Pre-loved"
+                    : "Quality checked"}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Usually one of a kind
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Product Details Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+      >
+        <Tabs defaultValue="description" className="mb-12">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="description">Description</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="description" className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-muted-foreground mb-4 leading-relaxed">
+                    {product.description}
+                  </p>
+                  {product.sku && (
+                    <div className="border-border mt-4 border-t pt-4">
+                      <p className="text-muted-foreground text-sm">
+                        <strong>SKU:</strong> {product.sku}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reviews" className="mt-6">
+            <ReviewTab product={product} />
+          </TabsContent>
+        </Tabs>
+      </motion.div>
     </div>
   );
 }

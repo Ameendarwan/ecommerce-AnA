@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, MapPin, Calendar, Package, DollarSign } from "lucide-react";
 import { OrderWithDetails } from "@/services/admin/adminOrderService";
 import { useOrder } from "@/hooks/queries";
@@ -40,12 +39,18 @@ const getStatusColor = (status: string) => {
   }
 };
 
+function formatPaymentMethod(method?: string | null) {
+  if (!method) return "COD";
+  const normalized = method.trim().toLowerCase();
+  if (normalized === "cod" || normalized === "cash on delivery") return "COD";
+  return method.trim().toUpperCase();
+}
+
 export function OrderDetailsModal({
   isOpen,
   onClose,
   order,
 }: OrderDetailsModalProps) {
-  // Use the query hook to fetch order details
   const { data: orderDetails, isLoading: loading } = useOrder(
     isOpen && order ? order.id.toString() : "",
   );
@@ -53,11 +58,16 @@ export function OrderDetailsModal({
   if (!order) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[80vh] max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+        <DialogHeader className="shrink-0 border-b px-6 py-5 pr-12">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Package className="h-5 w-5 shrink-0" />
             Order #{order.id}
           </DialogTitle>
           <DialogDescription>
@@ -65,13 +75,13 @@ export function OrderDetailsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh]">
-          <div className="space-y-6 pr-4">
+        <div className="max-h-[calc(90vh-9.5rem)] overflow-y-auto overscroll-contain">
+          <div className="space-y-6 px-6 py-5">
             {/* Order Summary */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-500" />
-                <div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-slate-700">
                     Order Date
                   </p>
@@ -86,9 +96,9 @@ export function OrderDetailsModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-slate-500" />
-                <div>
+              <div className="flex items-start gap-3">
+                <DollarSign className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-slate-700">
                     Total Amount
                   </p>
@@ -98,24 +108,26 @@ export function OrderDetailsModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-slate-500" />
-                <div>
+              <div className="flex items-start gap-3">
+                <Package className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-slate-700">Status</p>
-                  <Badge className={`${getStatusColor(order.status)} border`}>
+                  <Badge
+                    className={`${getStatusColor(order.status)} border capitalize`}
+                  >
                     {order.status}
                   </Badge>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-slate-500" />
-                <div>
+              <div className="flex items-start gap-3">
+                <User className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-slate-700">
                     Payment Method
                   </p>
-                  <p className="text-sm text-slate-600">
-                    {order.payment_method || "Not specified"}
+                  <p className="text-sm font-semibold tracking-wide text-slate-700">
+                    {formatPaymentMethod(order.payment_method)}
                   </p>
                 </div>
               </div>
@@ -125,8 +137,8 @@ export function OrderDetailsModal({
 
             {/* Customer Information */}
             <div>
-              <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                <User className="h-5 w-5" />
+              <h3 className="mb-3 flex flex-wrap items-center gap-2 text-lg font-semibold">
+                <User className="h-5 w-5 shrink-0" />
                 Customer Information
                 {!order.user_id && (
                   <Badge variant="outline" className="text-xs">
@@ -134,20 +146,20 @@ export function OrderDetailsModal({
                   </Badge>
                 )}
               </h3>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-slate-700">Name</p>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm wrap-break-word text-slate-600">
                     {order.profile?.username ||
                       order.guest_name ||
                       "Not provided"}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-slate-700">
                     {order.user_id ? "Email" : "Phone"}
                   </p>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm wrap-break-word text-slate-600">
                     {order.user_id
                       ? order.profile?.email || "Not provided"
                       : order.guest_phone || "Not provided"}
@@ -165,38 +177,44 @@ export function OrderDetailsModal({
               <>
                 <div>
                   <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                    <MapPin className="h-5 w-5" />
+                    <MapPin className="h-5 w-5 shrink-0" />
                     Shipping Address
                   </h3>
                   <div className="bg-card rounded-lg border p-4">
                     {order.shipping_address ? (
-                      <>
-                        <p className="text-foreground font-medium">
+                      <div className="space-y-1">
+                        <p className="text-foreground font-medium wrap-break-word">
                           {order.shipping_address.street}
                         </p>
-                        <p className="text-muted-foreground text-sm">
-                          {order.shipping_address.city},{" "}
-                          {order.shipping_address.state}{" "}
-                          {order.shipping_address.zip_code}
+                        <p className="text-muted-foreground text-sm wrap-break-word">
+                          {[
+                            order.shipping_address.city,
+                            order.shipping_address.state,
+                            order.shipping_address.zip_code,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
                         </p>
-                        <p className="text-muted-foreground text-sm">
-                          {order.shipping_address.country}
-                        </p>
-                      </>
+                        {order.shipping_address.country ? (
+                          <p className="text-muted-foreground text-sm">
+                            {order.shipping_address.country}
+                          </p>
+                        ) : null}
+                      </div>
                     ) : (
-                      <>
-                        <p className="text-foreground font-medium">
+                      <div className="space-y-1">
+                        <p className="text-foreground font-medium wrap-break-word">
                           {order.shipping_street}
                         </p>
                         <p className="text-muted-foreground text-sm">
                           {order.shipping_city}
                         </p>
                         {order.shipping_notes ? (
-                          <p className="text-muted-foreground mt-2 text-sm">
+                          <p className="text-muted-foreground mt-2 text-sm wrap-break-word">
                             Notes: {order.shipping_notes}
                           </p>
                         ) : null}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -207,7 +225,7 @@ export function OrderDetailsModal({
             {/* Order Items */}
             <div>
               <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                <Package className="h-5 w-5" />
+                <Package className="h-5 w-5 shrink-0" />
                 Order Items
               </h3>
 
@@ -222,9 +240,9 @@ export function OrderDetailsModal({
                   {orderDetails.order_items.map((item) => (
                     <div
                       key={item.id}
-                      className="bg-card flex items-center gap-4 rounded-lg border p-4 shadow-sm"
+                      className="bg-card flex items-start gap-4 rounded-lg border p-4"
                     >
-                      <div className="bg-muted h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg">
+                      <div className="bg-muted h-16 w-16 shrink-0 overflow-hidden rounded-lg">
                         {item.product?.image ? (
                           <Image
                             src={item.product.image}
@@ -240,8 +258,8 @@ export function OrderDetailsModal({
                         )}
                       </div>
 
-                      <div className="flex-1">
-                        <h4 className="text-foreground font-medium">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <h4 className="text-foreground font-medium wrap-break-word">
                           {item.product?.title || "Product"}
                         </h4>
                         <p className="text-muted-foreground text-sm">
@@ -252,21 +270,20 @@ export function OrderDetailsModal({
                         </p>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-foreground font-semibold">
+                      <div className="shrink-0 text-right">
+                        <p className="text-foreground font-semibold whitespace-nowrap">
                           {formatCurrency(item.quantity * item.price)}
                         </p>
                       </div>
                     </div>
                   ))}
 
-                  {/* Order Total */}
                   <div className="bg-card rounded-lg border p-4">
-                    <div className="flex justify-between">
+                    <div className="flex items-center justify-between gap-4">
                       <span className="text-foreground text-lg font-semibold">
-                        Total:
+                        Total
                       </span>
-                      <span className="text-lg font-bold text-emerald-600">
+                      <span className="text-lg font-bold whitespace-nowrap text-emerald-600">
                         {formatCurrency(order.total)}
                       </span>
                     </div>
@@ -282,10 +299,10 @@ export function OrderDetailsModal({
               )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="flex justify-end gap-2 border-t pt-4">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex shrink-0 justify-end border-t px-6 py-4">
+          <Button variant="default" onClick={onClose}>
             Close
           </Button>
         </div>
