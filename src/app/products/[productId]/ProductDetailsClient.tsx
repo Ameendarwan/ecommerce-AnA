@@ -30,15 +30,19 @@ import {
   hasActiveDiscount,
   normalizeDiscountPercent,
 } from "@/utils/productPricing";
+import { useProduct } from "@/hooks/queries";
 
 type ProductDetailsClientProps = {
   product: ProductType;
 };
 
 export default function ProductDetailsClient({
-  product,
+  product: initialProduct,
 }: ProductDetailsClientProps) {
   const { addToCart, cartItems } = useCart();
+  const { data: liveProduct } = useProduct(initialProduct.product_id);
+  const product = liveProduct ?? initialProduct;
+
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
@@ -119,7 +123,7 @@ export default function ProductDetailsClient({
                       src={productImages[selectedImageIndex]}
                       alt={product.title}
                       fill
-                      className="object-contain p-4"
+                      className="object-contain"
                       loading="eager"
                     />
                   ) : (
@@ -352,9 +356,7 @@ export default function ProductDetailsClient({
                   <>
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart —{" "}
-                    {formatCurrency(
-                      salePrice * (uniqueItem ? 1 : quantity),
-                    )}
+                    {formatCurrency(salePrice * (uniqueItem ? 1 : quantity))}
                   </>
                 )}
               </Button>

@@ -56,7 +56,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
-      router.push("/dashboard");
+      router.replace("/dashboard");
       return;
     }
 
@@ -105,13 +105,7 @@ export default function AdminDashboard() {
   };
 
   if (adminLoading || loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex h-64 items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (adminError || !isAdmin) {

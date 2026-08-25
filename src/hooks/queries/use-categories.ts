@@ -18,6 +18,7 @@ export function useCategories(options?: UseQueryOptions<CategoryType[]>) {
 		queryFn: categoryService.getCategories,
 		staleTime: 10 * 60 * 1000, // 10 minutes (categories rarely change)
 		gcTime: 30 * 60 * 1000, // 30 minutes cache
+		refetchOnWindowFocus: true,
 		retry: (failureCount, error) => {
 			if (
 				error instanceof Error &&

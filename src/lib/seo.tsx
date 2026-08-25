@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 
 export const SITE = {
   name: "Thriftonia",
-  url: "https://thriftonia.pk",
+  // Use www — apex redirects here; WhatsApp often drops og:image on redirects
+  url: "https://www.thriftonia.pk",
   description: "Style for less, quality for more",
   locale: "en_PK",
-  /** Used as the default social preview (WhatsApp, iMessage, etc.) */
-  ogImage: "/brand-logo-2.png",
+  /**
+   * Social preview image (WhatsApp / iMessage / Facebook).
+   * Keep under ~300KB — WhatsApp silently skips large PNGs.
+   */
+  ogImage: "/og-image.jpg",
 } as const;
 
 export function absoluteUrl(path = "/") {
@@ -17,7 +21,8 @@ export const brandOgImage = {
   url: SITE.ogImage,
   alt: SITE.name,
   width: 1200,
-  height: 1200,
+  height: 630,
+  type: "image/jpeg",
 } as const;
 
 type PageMetaOpts = {
@@ -46,7 +51,15 @@ export function pageMetadata({
       siteName: SITE.name,
       locale: SITE.locale,
       type: "website",
-      images: [{ url: image, alt: title }],
+      images: [
+        {
+          url: image,
+          alt: title,
+          width: brandOgImage.width,
+          height: brandOgImage.height,
+          type: brandOgImage.type,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",

@@ -313,7 +313,7 @@ export function ProductFormModal({
               }
               placeholder="Condition, size, wear notes…"
               rows={3}
-              className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-1"
+              className="border-input bg-background placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:outline-none focus-visible:ring-0"
             />
             {errors.description && (
               <p className="text-destructive text-sm">{errors.description}</p>

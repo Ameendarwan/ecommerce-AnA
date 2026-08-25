@@ -94,6 +94,7 @@ export function useProducts(options?: UseQueryOptions<ProductType[]>) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (
         error instanceof Error &&
@@ -164,7 +165,10 @@ export function useProducts(options?: UseQueryOptions<ProductType[]>) {
 // Get product by ID with enhanced error handling
 export function useProduct(
   productId: string,
-  options?: UseQueryOptions<ProductType | null>
+  options?: Omit<
+    UseQueryOptions<ProductType | null>,
+    'queryKey' | 'queryFn'
+  >
 ) {
   return useQuery({
     queryKey: productKeys.detail(productId),
@@ -174,6 +178,7 @@ export function useProduct(
     },
     enabled: !!productId, // Only fetch when productId is provided
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (
         error instanceof Error &&
@@ -205,6 +210,7 @@ export function useProductsByCategory(
     },
     enabled: !!categoryId && categoryId > 0, // Only fetch when valid categoryId
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (
         error instanceof Error &&
@@ -245,6 +251,7 @@ export function useFilteredProducts(
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (
         error instanceof Error &&

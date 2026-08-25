@@ -100,7 +100,7 @@ export function Navbar() {
             >
               <ShoppingCart className="size-5" />
               {totalItems > 0 && (
-                <span className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-medium">
+                <span className="bg-primary text-primary-foreground absolute top-1 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-medium">
                   {totalItems}
                 </span>
               )}

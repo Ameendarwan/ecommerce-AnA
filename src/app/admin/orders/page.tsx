@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { Eye, MoreVertical, Package } from "lucide-react";
+import { toast } from "sonner";
+
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
   Select,
   SelectContent,
@@ -14,49 +14,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Search,
-  Filter,
-  Eye,
-  Calendar,
-  DollarSign,
-  Package,
-  User,
-  MapPin,
-} from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { OrderDetailsModal } from "@/components/admin/OrderDetailsModal";
+import {
+  AdminDataTable,
+  AdminEntityCell,
+  AdminStatusPill,
+  AdminTablePagination,
+  AdminTableToolbar,
+  type AdminDataTableColumn,
+} from "@/components/admin/table";
 import {
   adminOrderService,
   OrderFilters,
   OrderWithDetails,
 } from "@/services/admin/adminOrderService";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { format } from "date-fns";
-import { toast } from "sonner";
-import { OrderDetailsModal } from "@/components/admin/OrderDetailsModal";
 
-const statusOptions = [
+const STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
   { value: "pending", label: "Pending" },
   { value: "processing", label: "Processing" },
   { value: "shipped", label: "Shipped" },
   { value: "delivered", label: "Delivered" },
   { value: "cancelled", label: "Cancelled" },
-];
+] as const;
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "delivered":
-    case "shipped":
-      return "bg-green-100 text-green-800";
-    case "processing":
-      return "bg-blue-100 text-blue-800";
-    case "pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "cancelled":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
+function getCustomerName(order: OrderWithDetails) {
+  return (
+    order.profile?.username ||
+    order.guest_name ||
+    order.profile?.email ||
+    "Guest"
+  );
+}
+
+function getCustomerSubtext(order: OrderWithDetails) {
+  if (order.guest_phone) return order.guest_phone;
+  if (order.profile?.email && order.profile.username)
+    return order.profile.email;
+  if (!order.user_id) return "COD guest";
+  return "Registered";
+}
+
+function getLocation(order: OrderWithDetails) {
+  if (order.shipping_address?.city) {
+    return [order.shipping_address.city, order.shipping_address.state]
+      .filter(Boolean)
+      .join(", ");
   }
-};
+  if (order.shipping_city) return order.shipping_city;
+  return "—";
+}
+
+function getPayment(order: OrderWithDetails) {
+  const method = order.payment_method?.toLowerCase();
+  if (!method || method === "cod") return "COD";
+  return method.toUpperCase();
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -66,10 +89,11 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(
     null,
   );
-  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
-  const pageLimit = 20;
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const pageLimit = 10;
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -87,309 +111,269 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, currentPage, pageLimit]);
+  }, [filters, currentPage]);
 
   useEffect(() => {
-    fetchOrders();
+    void fetchOrders();
   }, [fetchOrders]);
+
+  const filteredOrders = useMemo(() => {
+    if (!searchTerm.trim()) return orders;
+    const q = searchTerm.toLowerCase();
+    return orders.filter(
+      (order) =>
+        order.id.toString().includes(q) ||
+        order.profile?.username?.toLowerCase().includes(q) ||
+        order.profile?.email?.toLowerCase().includes(q) ||
+        order.guest_name?.toLowerCase().includes(q) ||
+        order.guest_phone?.toLowerCase().includes(q) ||
+        order.shipping_city?.toLowerCase().includes(q) ||
+        order.shipping_address?.city?.toLowerCase().includes(q),
+    );
+  }, [orders, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(totalOrders / pageLimit));
 
   const handleStatusChange = async (orderId: number, newStatus: string) => {
     try {
+      setUpdatingId(orderId);
       await adminOrderService.updateOrderStatus(orderId, newStatus);
-      toast.success("Order status updated successfully");
-      fetchOrders();
+      toast.success("Order status updated");
+      await fetchOrders();
     } catch (error) {
       console.error("Error updating order status:", error);
       toast.error("Failed to update order status");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const handleFilterChange = (key: keyof OrderFilters, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value || undefined,
-    }));
-    setCurrentPage(1);
+  const openDetails = (order: OrderWithDetails) => {
+    setSelectedOrder(order);
+    setShowDetails(true);
   };
 
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      // Search by order ID or customer name/email
-      setFilters((prev) => ({
-        ...prev,
-        // Add search functionality to the service if needed
-      }));
-    } else {
-      const { ...restFilters } = filters;
-      setFilters(restFilters);
-    }
-    setCurrentPage(1);
-  };
+  const columns: AdminDataTableColumn<OrderWithDetails>[] = useMemo(
+    () => [
+      {
+        key: "order",
+        header: "Order",
+        render: (order) => {
+          const name = getCustomerName(order);
+          const initials = name
+            .split(" ")
+            .map((part) => part[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase();
+          const subtext = getCustomerSubtext(order);
 
-  const totalPages = Math.ceil(totalOrders / pageLimit);
-
-  const filteredOrders = orders.filter((order) => {
-    if (!searchTerm.trim()) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      order.id.toString().includes(searchLower) ||
-      order.profile?.username?.toLowerCase().includes(searchLower) ||
-      order.profile?.email?.toLowerCase().includes(searchLower) ||
-      order.guest_name?.toLowerCase().includes(searchLower) ||
-      order.guest_phone?.toLowerCase().includes(searchLower) ||
-      order.shipping_city?.toLowerCase().includes(searchLower)
-    );
-  });
+          return (
+            <AdminEntityCell
+              initials={initials}
+              title={`Order #${order.id}`}
+              subtitle={
+                subtext ? `${name}${subtext ? ` · ${subtext}` : ""}` : name
+              }
+            />
+          );
+        },
+      },
+      {
+        key: "date",
+        header: "Date",
+        cellClassName: "text-slate-600",
+        render: (order) =>
+          order.created_at
+            ? format(new Date(order.created_at), "MMM dd, yyyy")
+            : "—",
+      },
+      {
+        key: "payment",
+        header: "Payment",
+        render: (order) => (
+          <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-sky-200 ring-inset">
+            {getPayment(order)}
+          </span>
+        ),
+      },
+      {
+        key: "total",
+        header: "Total",
+        cellClassName: "font-semibold text-slate-900",
+        render: (order) => formatCurrency(order.total),
+      },
+      {
+        key: "location",
+        header: "Location",
+        cellClassName: "max-w-[160px] truncate text-slate-600",
+        render: (order) => getLocation(order),
+      },
+      {
+        key: "status",
+        header: "Status",
+        render: (order) => (
+          <AdminStatusPill
+            label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            tone={order.status}
+          />
+        ),
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        headerClassName: "w-12 text-right",
+        cellClassName: "text-right",
+        render: (order) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  disabled={updatingId === order.id}
+                  className="text-muted-foreground hover:bg-muted inline-flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors disabled:pointer-events-none disabled:opacity-50"
+                  aria-label={`Actions for order ${order.id}`}
+                >
+                  <MoreVertical className="size-4" />
+                </button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => openDetails(order)}>
+                  <Eye className="size-4" />
+                  View details
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Set status</DropdownMenuLabel>
+                {STATUS_OPTIONS.filter((option) => option.value !== "all").map(
+                  (option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      disabled={order.status === option.value}
+                      onClick={() => handleStatusChange(order.id, option.value)}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ),
+                )}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    [updatingId],
+  );
 
   if (loading && orders.length === 0) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex h-64 items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
     <div className="container mx-auto space-y-6 py-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Order Management
-          </h1>
-          <p className="text-muted-foreground">
-            Manage customer orders and track status
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">
-            {totalOrders} total orders
-          </span>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Review orders, update fulfillment status, and view customer details.
+        </p>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex flex-1 items-center space-x-2">
-              <Search className="text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by order ID, guest name, phone, or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} variant="outline" size="sm">
-                Search
-              </Button>
-            </div>
+      <AdminTableToolbar
+        searchPlaceholder="Search by order ID, name, phone, or city…"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={
+          <>
+            <Select
+              value={filters.status || "all"}
+              onValueChange={(value) => {
+                const next = value ?? "all";
+                setFilters((prev) => ({
+                  ...prev,
+                  status: next === "all" ? undefined : next,
+                }));
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10! w-full rounded-lg data-[size=default]:h-10! sm:w-40">
+                <SelectValue placeholder="All Statuses">
+                  {STATUS_OPTIONS.find(
+                    (option) => option.value === (filters.status || "all"),
+                  )?.label ?? "All Statuses"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="flex items-center gap-2">
-              <Filter className="text-muted-foreground h-4 w-4" />
-              <Select
-                value={filters.status || "all"}
-                onValueChange={(value) => {
-                  const v = value ?? "";
-                  handleFilterChange("status", v === "all" ? "" : v);
-                }}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Input
+              type="date"
+              value={filters.dateFrom || ""}
+              onChange={(e) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  dateFrom: e.target.value || undefined,
+                }));
+                setCurrentPage(1);
+              }}
+              className="h-10 w-full rounded-lg sm:w-40"
+              aria-label="From date"
+            />
 
-              <Input
-                type="date"
-                placeholder="From date"
-                value={filters.dateFrom || ""}
-                onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-                className="w-40"
-              />
+            <Input
+              type="date"
+              value={filters.dateTo || ""}
+              onChange={(e) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  dateTo: e.target.value || undefined,
+                }));
+                setCurrentPage(1);
+              }}
+              className="h-10 w-full rounded-lg sm:w-40"
+              aria-label="To date"
+            />
+          </>
+        }
+      />
 
-              <Input
-                type="date"
-                placeholder="To date"
-                value={filters.dateTo || ""}
-                onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                className="w-40"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <AdminDataTable
+        columns={columns}
+        data={filteredOrders}
+        getRowKey={(order) => order.id}
+        emptyIcon={<Package className="size-10 opacity-40" />}
+        emptyTitle="No orders found"
+        isLoading={loading}
+      />
 
-      {/* Orders List */}
-      <div className="space-y-4">
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map((order) => (
-            <Card key={order.id}>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <h3 className="font-semibold">Order #{order.id}</h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {order.created_at
-                            ? format(new Date(order.created_at), "MMM dd, yyyy")
-                            : "No date"}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {order.profile?.username ||
-                            order.guest_name ||
-                            "Unknown"}
-                          {!order.user_id && order.guest_name ? (
-                            <Badge variant="outline" className="ml-1 text-xs">
-                              Guest
-                            </Badge>
-                          ) : null}
-                        </span>
-                        {order.guest_phone ? (
-                          <span className="text-xs text-gray-500">
-                            {order.guest_phone}
-                          </span>
-                        ) : null}
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          {formatCurrency(order.total)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+      <AdminTablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalOrders}
+        visibleCount={filteredOrders.length}
+        onPageChange={setCurrentPage}
+        isLoading={loading}
+      />
 
-                  <div className="flex items-center gap-3">
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
-
-                    <Select
-                      value={order.status}
-                      onValueChange={(value) => {
-                        if (value != null) {
-                          handleStatusChange(order.id, value);
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setShowOrderDetails(true);
-                      }}
-                    >
-                      <Eye className="mr-1 h-3 w-3" />
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-
-                {(order.shipping_address ||
-                  order.shipping_city ||
-                  order.shipping_street) && (
-                  <div className="mt-3 flex items-center gap-1 text-sm text-gray-600">
-                    <MapPin className="h-3 w-3" />
-                    <span>
-                      {order.shipping_address
-                        ? `${order.shipping_address.city}, ${order.shipping_address.state}`
-                        : [order.shipping_street, order.shipping_city]
-                            .filter(Boolean)
-                            .join(", ")}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Package className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <h3 className="text-lg font-medium text-gray-600">
-                No orders found
-              </h3>
-              <p className="mt-2 text-gray-500">
-                No orders match your current filters.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
-                Showing {(currentPage - 1) * pageLimit + 1} to{" "}
-                {Math.min(currentPage * pageLimit, totalOrders)} of{" "}
-                {totalOrders} orders
-              </span>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </Button>
-
-                <span className="text-sm">
-                  Page {currentPage} of {totalPages}
-                </span>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Order Details Modal */}
-      {selectedOrder && (
+      {selectedOrder ? (
         <OrderDetailsModal
-          isOpen={showOrderDetails}
+          isOpen={showDetails}
           onClose={() => {
-            setShowOrderDetails(false);
+            setShowDetails(false);
             setSelectedOrder(null);
           }}
           order={selectedOrder}
         />
-      )}
+      ) : null}
     </div>
   );
 }

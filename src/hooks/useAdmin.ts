@@ -15,7 +15,7 @@ interface AdminData {
  * Uses the admin_users view which filters profiles where role='admin'
  */
 export function useAdmin(): AdminData {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +26,13 @@ export function useAdmin(): AdminData {
     const userId = user?.id ?? null;
 
     const checkAdminStatus = async () => {
+      // Wait for auth to finish before treating "no user" as non-admin.
+      // Otherwise a refresh redirects away from /admin/* while session loads.
+      if (authLoading) {
+        setLoading(true);
+        return;
+      }
+
       if (!userId) {
         checkedUserIdRef.current = null;
         setIsAdmin(false);
@@ -82,9 +89,9 @@ export function useAdmin(): AdminData {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
-  return { isAdmin, loading, error };
+  return { isAdmin, loading: authLoading || loading, error };
 }
 
 /**

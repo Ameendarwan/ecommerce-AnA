@@ -12,6 +12,7 @@ import { MainLayout } from "@/components/MainLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SplashScreen } from "@/components/SplashScreen";
 import { AppHeader } from "@/components/AppHeader";
+import { CatalogRealtimeSync } from "@/components/CatalogRealtimeSync";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SITE, brandOgImage } from "@/lib/seo";
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   icons: {
-    icon: { url: "/loader.png", type: "image/png" },
+    icon: { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
   },
 };
 
@@ -64,6 +65,7 @@ export default function RootLayout({
       <body className="bg-background min-h-screen">
         <ErrorBoundary>
           <TanStackQueryProvider>
+            <CatalogRealtimeSync />
             <AuthProvider>
               <CartProvider>
                 <ThemeProvider

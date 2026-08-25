@@ -28,8 +28,11 @@ import Link from "next/link";
 import { ProductFormModal } from "@/components/admin/ProductFormModal";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { getProductDeleteErrorMessage } from "@/utils/errorHandling";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateStorefrontCatalog } from "@/lib/cache/invalidateStorefrontCatalog";
 
 export default function AdminProductsPage() {
+  const queryClient = useQueryClient();
   const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -57,12 +60,17 @@ export default function AdminProductsPage() {
     }
   };
 
+  const syncStorefront = (productIds?: string[]) => {
+    void invalidateStorefrontCatalog(queryClient, { productIds });
+  };
+
   const handleCreateProduct = async (productData: CreateProductData) => {
     try {
-      await adminProductService.createProduct(productData);
+      const created = await adminProductService.createProduct(productData);
       toast.success("Product created successfully");
       setShowCreateModal(false);
       fetchProducts({ silent: true });
+      syncStorefront([created.product_id]);
     } catch (error) {
       console.error("Error creating product:", error);
       toast.error("Failed to create product");
@@ -78,6 +86,7 @@ export default function AdminProductsPage() {
       toast.success("Product updated successfully");
       setEditingProduct(null);
       fetchProducts({ silent: true });
+      syncStorefront([productId]);
     } catch (error) {
       console.error("Error updating product:", error);
       toast.error("Failed to update product");
@@ -93,6 +102,7 @@ export default function AdminProductsPage() {
       setProducts((prev) =>
         prev.filter((product) => product.product_id !== productId),
       );
+      syncStorefront([productId]);
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error(getProductDeleteErrorMessage(error));
@@ -109,13 +119,7 @@ export default function AdminProductsPage() {
   );
 
   if (initialLoading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex h-64 items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

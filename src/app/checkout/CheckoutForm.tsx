@@ -17,23 +17,30 @@ import {
 import { formatCurrency } from '@/utils/formatCurrency';
 import { SHIPPING_PKR, STORE_COUNTRY } from '@/lib/shipping';
 import { placeCodOrder } from '@/app/checkout/placeCodOrder';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { productKeys } from '@/hooks/queries';
 
 export default function CheckoutForm() {
   const { cartItems, subtotal, clearCart, isLoading } = useCart();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   const [notes, setNotes] = useState('');
 
-  if (isLoading) {
+  if (isLoading || redirecting) {
     return (
-      <div className="container mx-auto flex min-h-[40vh] items-center justify-center p-4">
-        <p className="text-muted-foreground">Loading checkout…</p>
+      <div className="container mx-auto flex min-h-[40vh] flex-col items-center justify-center gap-3 p-4">
+        <LoadingSpinner />
+        <p className="text-muted-foreground">
+          {redirecting ? 'Confirming your order…' : 'Loading checkout…'}
+        </p>
       </div>
     );
   }
@@ -43,7 +50,7 @@ export default function CheckoutForm() {
       <div className="container mx-auto p-4 text-center">
         <h1 className="mb-4 text-2xl font-bold">Your cart is empty</h1>
         <Link href="/">
-          <Button>Continue Shopping</Button>
+          <Button className="w-full sm:w-auto">Continue Shopping</Button>
         </Link>
       </div>
     );
@@ -51,8 +58,44 @@ export default function CheckoutForm() {
 
   const total = subtotal + SHIPPING_PKR;
 
+  const isValidPkPhone = (phone: string) => {
+    const normalized = phone.replace(/[\s-]/g, '');
+    return /^(\+92|0)?3\d{9}$/.test(normalized);
+  };
+
+  const isFormValid =
+    guestName.trim().length >= 2 &&
+    isValidPkPhone(guestPhone.trim()) &&
+    city.trim().length >= 2 &&
+    street.trim().length >= 5 &&
+    cartItems.every(
+      (item) =>
+        Number.isInteger(item.quantity) &&
+        item.quantity >= 1 &&
+        item.stock >= 1 &&
+        item.quantity <= item.stock
+    );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFormValid) return;
+
+    const invalidItem = cartItems.find(
+      (item) =>
+        !Number.isInteger(item.quantity) ||
+        item.quantity < 1 ||
+        item.stock < 1 ||
+        item.quantity > item.stock
+    );
+    if (invalidItem) {
+      toast.error(
+        invalidItem.stock < 1 || invalidItem.quantity < 1
+          ? `${invalidItem.title} has invalid quantity — remove it or update your cart`
+          : `Only ${invalidItem.stock} left of ${invalidItem.title}`
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -75,11 +118,18 @@ export default function CheckoutForm() {
         return;
       }
 
+      // Refresh product stock/availability on the storefront immediately
+      await queryClient.invalidateQueries({ queryKey: productKeys.all });
+
+      // Show loader before clearing cart so the empty-cart screen never flashes
+      setRedirecting(true);
       clearCart({ silent: true });
       toast.success('Order placed — pay cash on delivery');
       router.push(
         `/checkout/success?order_id=${result.orderId}&total=${result.total}`
       );
+      router.refresh();
+      return;
     } catch (err) {
       console.error(err);
       toast.error('Failed to place order');
@@ -90,13 +140,7 @@ export default function CheckoutForm() {
 
   return (
     <div className="container mx-auto max-w-4xl p-4">
-      <div className="mb-6 flex items-center">
-        <Link href="/cart" className="text-primary flex items-center">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Cart
-        </Link>
-        <h1 className="ml-4 text-3xl font-bold">Checkout</h1>
-      </div>
+      <h1 className="mb-6 text-3xl font-bold">Checkout</h1>
 
       <form
         onSubmit={handleSubmit}
@@ -108,47 +152,59 @@ export default function CheckoutForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="guestName">Full name</Label>
+              <Label htmlFor="guestName">
+                Full name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="guestName"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
                 placeholder="Your full name"
                 required
+                aria-required="true"
                 autoComplete="name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="guestPhone">Mobile number</Label>
+              <Label htmlFor="guestPhone">
+                Mobile number <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="guestPhone"
                 value={guestPhone}
                 onChange={(e) => setGuestPhone(e.target.value)}
                 placeholder="03XXXXXXXXX"
                 required
+                aria-required="true"
                 inputMode="tel"
                 autoComplete="tel"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
+              <Label htmlFor="city">
+                City <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="e.g. Karachi, Lahore, Islamabad"
                 required
+                aria-required="true"
                 autoComplete="address-level2"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="street">Full address</Label>
+              <Label htmlFor="street">
+                Full address <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="street"
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
                 placeholder="House / street / area"
                 required
+                aria-required="true"
                 autoComplete="street-address"
               />
             </div>
@@ -203,7 +259,7 @@ export default function CheckoutForm() {
             <Button
               type="submit"
               className="w-full cursor-pointer"
-              disabled={submitting}
+              disabled={submitting || !isFormValid}
             >
               {submitting ? 'Placing order…' : 'Place COD Order'}
             </Button>

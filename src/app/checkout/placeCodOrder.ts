@@ -2,6 +2,7 @@
 
 import { createServiceRoleSupabase } from '@/lib/supabase/serviceRole';
 import { SHIPPING_PKR } from '@/lib/shipping';
+import { revalidateCatalog } from '@/lib/cache/revalidateCatalog';
 
 export interface CodCartLine {
   product_id: string;
@@ -23,6 +24,25 @@ export type PlaceCodOrderResult =
   | { ok: true; orderId: number; total: number }
   | { ok: false; error: string };
 
+export type CodOrderSummaryItem = {
+  product_id: string;
+  title: string;
+  quantity: number;
+  price: number;
+  image: string | null;
+};
+
+export type CodOrderSummary = {
+  orderId: number;
+  total: number;
+  shippingFee: number;
+  guestName: string | null;
+  shippingCity: string | null;
+  items: CodOrderSummaryItem[];
+};
+
+type ServiceSupabase = ReturnType<typeof createServiceRoleSupabase>;
+
 function normalizePkPhone(phone: string): string {
   return phone.replace(/[\s-]/g, '');
 }
@@ -30,6 +50,56 @@ function normalizePkPhone(phone: string): string {
 function isValidPkPhone(phone: string): boolean {
   const normalized = normalizePkPhone(phone);
   return /^(\+92|0)?3\d{9}$/.test(normalized);
+}
+
+function isValidOrderQuantity(quantity: unknown): quantity is number {
+  return (
+    typeof quantity === 'number' &&
+    Number.isInteger(quantity) &&
+    quantity >= 1
+  );
+}
+
+async function restoreReservedStock(
+  supabase: ServiceSupabase,
+  reserved: Array<{ product_id: string; quantity: number }>
+) {
+  for (const item of reserved) {
+    const { data: product } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('product_id', item.product_id)
+      .single();
+
+    if (product) {
+      await supabase
+        .from('products')
+        .update({ stock: product.stock + item.quantity })
+        .eq('product_id', item.product_id);
+    }
+  }
+}
+
+/**
+ * Reserve stock with optimistic locking:
+ * only succeeds if stock is still the expected value and >= quantity.
+ */
+async function reserveStock(
+  supabase: ServiceSupabase,
+  productId: string,
+  expectedStock: number,
+  quantity: number
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('products')
+    .update({ stock: expectedStock - quantity })
+    .eq('product_id', productId)
+    .eq('stock', expectedStock)
+    .gte('stock', quantity)
+    .select('product_id')
+    .maybeSingle();
+
+  return !error && !!data;
 }
 
 export async function placeCodOrder(
@@ -62,8 +132,14 @@ export async function placeCodOrder(
   }
 
   for (const item of items) {
-    if (!item.product_id || item.quantity < 1 || item.price < 0) {
+    if (!item.product_id || item.price < 0) {
       return { ok: false, error: 'Invalid cart items' };
+    }
+    if (!isValidOrderQuantity(item.quantity)) {
+      return {
+        ok: false,
+        error: `Invalid quantity for ${item.title || 'a product'} — quantity must be at least 1`,
+      };
     }
   }
 
@@ -77,31 +153,56 @@ export async function placeCodOrder(
     return { ok: false, error: 'Order service is not configured' };
   }
 
+  const reserved: Array<{ product_id: string; quantity: number }> = [];
+
   try {
     const supabase = createServiceRoleSupabase();
 
+    // Validate quantity/stock and reserve before creating the order (race-safe)
     for (const item of items) {
       const { data: product, error } = await supabase
         .from('products')
-        .select('product_id, stock, price, title')
+        .select('product_id, stock, title')
         .eq('product_id', item.product_id)
         .single();
 
       if (error || !product) {
+        await restoreReservedStock(supabase, reserved);
         return {
           ok: false,
           error: `Product unavailable: ${item.title || item.product_id}`,
         };
       }
+
+      if (!product.stock || product.stock < 1) {
+        await restoreReservedStock(supabase, reserved);
+        return { ok: false, error: `${product.title} is sold out` };
+      }
+
       if (product.stock < item.quantity) {
+        await restoreReservedStock(supabase, reserved);
         return {
           ok: false,
-          error:
-            product.stock <= 0
-              ? `${product.title} is sold out`
-              : `Only ${product.stock} left of ${product.title}`,
+          error: `Only ${product.stock} left of ${product.title}`,
         };
       }
+
+      const reservedOk = await reserveStock(
+        supabase,
+        item.product_id,
+        product.stock,
+        item.quantity
+      );
+
+      if (!reservedOk) {
+        await restoreReservedStock(supabase, reserved);
+        return {
+          ok: false,
+          error: `${product.title} just sold out — please update your cart`,
+        };
+      }
+
+      reserved.push({ product_id: item.product_id, quantity: item.quantity });
     }
 
     const { data: order, error: orderError } = await supabase
@@ -123,6 +224,7 @@ export async function placeCodOrder(
 
     if (orderError || !order) {
       console.error('COD order insert failed:', orderError);
+      await restoreReservedStock(supabase, reserved);
       return {
         ok: false,
         error:
@@ -145,31 +247,91 @@ export async function placeCodOrder(
     if (itemsError) {
       console.error('COD order items failed:', itemsError);
       await supabase.from('orders').delete().eq('id', order.id);
+      await restoreReservedStock(supabase, reserved);
       return { ok: false, error: 'Could not save order items' };
     }
 
-    for (const item of items) {
-      const { data: product } = await supabase
-        .from('products')
-        .select('stock')
-        .eq('product_id', item.product_id)
-        .single();
-
-      if (product) {
-        const newStock = Math.max(0, product.stock - item.quantity);
-        await supabase
-          .from('products')
-          .update({ stock: newStock })
-          .eq('product_id', item.product_id);
-      }
-    }
+    await revalidateCatalog(items.map((item) => item.product_id));
 
     return { ok: true, orderId: order.id, total };
   } catch (err) {
     console.error('placeCodOrder error:', err);
+    try {
+      if (reserved.length && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        await restoreReservedStock(createServiceRoleSupabase(), reserved);
+      }
+    } catch (restoreErr) {
+      console.error('Failed to restore stock after order error:', restoreErr);
+    }
     return {
       ok: false,
       error: err instanceof Error ? err.message : 'Unexpected error placing order',
     };
+  }
+}
+
+/** Receipt data for the post-checkout success page (service role; guest-safe fields only). */
+export async function getCodOrderSummary(
+  orderId: number
+): Promise<CodOrderSummary | null> {
+  if (!Number.isFinite(orderId) || orderId < 1) return null;
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+
+  try {
+    const supabase = createServiceRoleSupabase();
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(
+        'id, total, shipping_fee, guest_name, shipping_city, payment_method, created_at'
+      )
+      .eq('id', orderId)
+      .single();
+
+    if (orderError || !order) return null;
+    if (order.payment_method !== 'cod') return null;
+
+    // Limit ID guessing: only show recent orders on the success page
+    if (order.created_at) {
+      const ageMs = Date.now() - new Date(order.created_at).getTime();
+      if (ageMs > 24 * 60 * 60 * 1000) return null;
+    }
+
+    const { data: rows, error: itemsError } = await supabase
+      .from('order_items')
+      .select(
+        `
+        product_id,
+        quantity,
+        price,
+        product:products ( title, image )
+      `
+      )
+      .eq('order_id', orderId);
+
+    if (itemsError || !rows) return null;
+
+    const items: CodOrderSummaryItem[] = rows.map((row) => {
+      const product = Array.isArray(row.product) ? row.product[0] : row.product;
+      return {
+        product_id: row.product_id,
+        title: product?.title ?? 'Product',
+        quantity: row.quantity,
+        price: row.price,
+        image: product?.image ?? null,
+      };
+    });
+
+    return {
+      orderId: order.id,
+      total: order.total,
+      shippingFee: order.shipping_fee ?? SHIPPING_PKR,
+      guestName: order.guest_name ?? null,
+      shippingCity: order.shipping_city ?? null,
+      items,
+    };
+  } catch (err) {
+    console.error('getCodOrderSummary error:', err);
+    return null;
   }
 }

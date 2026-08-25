@@ -112,7 +112,7 @@ export function ProductCard({ product }: ProductCardProps) {
             type="button"
             onClick={handleCartAction}
             disabled={!inCart && soldOut}
-            className={`flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold shadow-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold shadow-md transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
               inCart
                 ? "border-foreground text-foreground hover:bg-background border bg-white/90 backdrop-blur-sm"
                 : "bg-foreground text-background hover:bg-foreground/90"
@@ -156,12 +156,6 @@ export function ProductCard({ product }: ProductCardProps) {
           {(product.show_badge ?? true) && (
             <Badge className="bg-foreground text-background hover:bg-foreground rounded-full px-2.5 py-0.5 text-[11px] font-medium">
               {conditionLabel}
-            </Badge>
-          )}
-
-          {!!soldOut && (
-            <Badge variant="destructive" className="rounded-full">
-              Sold out
             </Badge>
           )}
         </div>

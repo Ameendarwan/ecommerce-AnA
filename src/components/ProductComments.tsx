@@ -235,7 +235,7 @@ export function ProductComments() {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Share your experience with this product..."
-              className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring resize-vertical min-h-[100px] w-full rounded-md border p-3 focus:ring-1 focus:outline-none"
+              className="border-input bg-background text-foreground placeholder:text-muted-foreground resize-vertical min-h-[100px] w-full rounded-md border p-3 focus:outline-none focus:ring-0"
               maxLength={500}
             />
             <div className="text-muted-foreground mt-1 text-sm">

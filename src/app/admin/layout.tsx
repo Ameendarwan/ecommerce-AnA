@@ -18,23 +18,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const hasResolvedRef = useRef(false);
 
   useEffect(() => {
+    // Only redirect after admin status has fully resolved (incl. auth session).
     if (!loading && !isAdmin) {
-      router.push("/dashboard");
+      router.replace("/dashboard");
+      return;
     }
-    if (!loading) {
+    if (!loading && isAdmin) {
       hasResolvedRef.current = true;
     }
   }, [isAdmin, loading, router]);
 
   // Avoid unmounting admin pages on background auth re-checks
   if (loading && !hasResolvedRef.current) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex h-64 items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!loading && (error || !isAdmin)) {

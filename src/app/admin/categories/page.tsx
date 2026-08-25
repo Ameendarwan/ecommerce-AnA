@@ -33,7 +33,7 @@ import { CategoryType } from "@/types";
 import { toast } from "sonner";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { useQueryClient } from "@tanstack/react-query";
-import { categoryKeys } from "@/hooks/queries";
+import { invalidateStorefrontCatalog } from "@/lib/cache/invalidateStorefrontCatalog";
 
 export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
@@ -58,8 +58,8 @@ export default function AdminCategoriesPage() {
     void fetchCategories();
   }, []);
 
-  const invalidateStorefrontCategories = () => {
-    void queryClient.invalidateQueries({ queryKey: categoryKeys.lists() });
+  const syncStorefront = () => {
+    void invalidateStorefrontCatalog(queryClient);
   };
 
   const fetchCategories = async ({
@@ -125,7 +125,7 @@ export default function AdminCategoriesPage() {
 
       closeFormModal();
       await fetchCategories({ silent: true });
-      invalidateStorefrontCategories();
+      syncStorefront();
     } catch (error) {
       console.error("Error saving category:", error);
       toast.error(
@@ -154,7 +154,7 @@ export default function AdminCategoriesPage() {
           ? `"${category.name}" is now visible`
           : `"${category.name}" is now hidden`,
       );
-      invalidateStorefrontCategories();
+      syncStorefront();
     } catch (error) {
       console.error("Error toggling category:", error);
       setCategories((prev) =>
@@ -177,7 +177,7 @@ export default function AdminCategoriesPage() {
       toast.success("Category deleted");
       setDeletingCategory(null);
       setCategories((prev) => prev.filter((category) => category.id !== id));
-      invalidateStorefrontCategories();
+      syncStorefront();
     } catch (error) {
       console.error("Error deleting category:", error);
       toast.error(
@@ -197,13 +197,7 @@ export default function AdminCategoriesPage() {
   );
 
   if (initialLoading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex h-64 items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -361,7 +355,7 @@ export default function AdminCategoriesPage() {
                 onChange={(e) => setFormDescription(e.target.value)}
                 rows={3}
                 placeholder="Optional"
-                className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-1"
+                className="border-input bg-background placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:outline-none focus-visible:ring-0"
               />
             </div>
 
