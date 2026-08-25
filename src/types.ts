@@ -1,3 +1,5 @@
+export type ProductBadge = "new" | "used";
+
 export interface ProductType {
   product_id: string;
   title: string;
@@ -8,6 +10,11 @@ export interface ProductType {
   stock: number;
   sku?: string;
   category_id?: number;
+  is_visible?: boolean;
+  show_sale_tag?: boolean;
+  show_badge?: boolean;
+  discount_percent?: number;
+  badge?: ProductBadge;
   created_at?: string;
   updated_at?: string;
 }
@@ -110,4 +117,5 @@ export interface CategoryType {
   name: string;
   description: string;
   parent_id?: number;
+  is_visible?: boolean;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -15,14 +15,19 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { isAdmin, loading, error } = useAdmin();
   const router = useRouter();
+  const hasResolvedRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
       router.push("/dashboard");
     }
+    if (!loading) {
+      hasResolvedRef.current = true;
+    }
   }, [isAdmin, loading, router]);
 
-  if (loading) {
+  // Avoid unmounting admin pages on background auth re-checks
+  if (loading && !hasResolvedRef.current) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex h-64 items-center justify-center">
@@ -32,7 +37,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (error || !isAdmin) {
+  if (!loading && (error || !isAdmin)) {
     return (
       <div className="container mx-auto py-8">
         <Card>

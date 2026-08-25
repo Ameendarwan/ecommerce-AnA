@@ -7,6 +7,7 @@ export async function getProductsServer(): Promise<ProductType[]> {
     const { data, error } = await supabase
       .from('products')
       .select('*, category:categories(*)')
+      .eq('is_visible', true)
       .order('title');
 
     if (error) {

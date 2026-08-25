@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase/client";
 
@@ -19,28 +19,43 @@ export function useAdmin(): AdminData {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const checkedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    const userId = user?.id ?? null;
+
     const checkAdminStatus = async () => {
-      if (!user) {
+      if (!userId) {
+        checkedUserIdRef.current = null;
         setIsAdmin(false);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
+      // Same user — skip re-check (avoids focus/token-refresh remounts)
+      if (checkedUserIdRef.current === userId) {
         setLoading(false);
         return;
       }
 
-      try {
+      // Only show loading on first check for this user
+      if (checkedUserIdRef.current !== userId) {
         setLoading(true);
-        setError(null);
+      }
+      setError(null);
 
-        // Check if user exists in admin_users view
+      try {
         const { data, error: queryError } = await supabase
           .from("admin_users")
           .select("profile_id")
-          .eq("profile_id", user.id)
+          .eq("profile_id", userId)
           .single();
 
+        if (cancelled) return;
+
         if (queryError) {
-          // If no rows returned, user is not admin
           if (queryError.code === "PGRST116") {
             setIsAdmin(false);
           } else {
@@ -49,20 +64,25 @@ export function useAdmin(): AdminData {
             setIsAdmin(false);
           }
         } else {
-          // User found in admin_users view
           setIsAdmin(!!data);
         }
+        checkedUserIdRef.current = userId;
       } catch (err) {
+        if (cancelled) return;
         console.error("Unexpected error checking admin status:", err);
         setError("Unexpected error occurred");
         setIsAdmin(false);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    checkAdminStatus();
-  }, [user]);
+    void checkAdminStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   return { isAdmin, loading, error };
 }
@@ -82,7 +102,6 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
       .single();
 
     if (error) {
-      // If no rows returned, user is not admin
       if (error.code === "PGRST116") {
         return false;
       }

@@ -14,6 +14,7 @@ import {
   LocalCartItem,
   saveLocalCart,
 } from '@/lib/localCart';
+import { getProductSalePrice } from '@/utils/productPricing';
 
 export interface CartItem extends ProductType {
   quantity: number;
@@ -115,7 +116,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const updated = [...cartItems, { ...product, quantity: 1 }];
+    const updated = [
+      ...cartItems,
+      {
+        ...product,
+        price: getProductSalePrice(product),
+        quantity: 1,
+      },
+    ];
     setCartItems(updated);
     persist(updated);
     toast.success('Added to cart');

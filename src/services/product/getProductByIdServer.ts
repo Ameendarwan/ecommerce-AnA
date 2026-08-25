@@ -10,6 +10,7 @@ export async function getProductByIdServer(
       .from('products')
       .select('*, category:categories(*)')
       .eq('product_id', id)
+      .eq('is_visible', true)
       .single();
 
     if (error) {

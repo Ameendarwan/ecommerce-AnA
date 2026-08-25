@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import { ProductType } from "@/types";
+import { ProductBadge, ProductType } from "@/types";
 
 export interface CreateProductData {
   title: string;
@@ -10,6 +10,11 @@ export interface CreateProductData {
   stock: number;
   sku?: string;
   category_id?: number;
+  is_visible?: boolean;
+  show_sale_tag?: boolean;
+  show_badge?: boolean;
+  discount_percent?: number;
+  badge?: ProductBadge;
 }
 
 export interface UpdateProductData extends Partial<CreateProductData> {

@@ -169,8 +169,23 @@ export default function AdminProductsPage() {
                 </div>
               )}
 
-              {/* Stock badge */}
-              <div className="absolute top-2 right-2">
+              {/* Status badges */}
+              <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                {product.is_visible === false && (
+                  <Badge variant="outline" className="bg-background/90">
+                    Hidden
+                  </Badge>
+                )}
+                {product.show_sale_tag && (
+                  <Badge className="bg-black text-white hover:bg-black">
+                    Sale
+                  </Badge>
+                )}
+                {(product.discount_percent ?? 0) > 0 && (
+                  <Badge className="bg-[#f05a2d] text-white hover:bg-[#f05a2d]">
+                    {product.discount_percent}% OFF
+                  </Badge>
+                )}
                 {product.stock <= 5 ? (
                   <Badge
                     variant="destructive"

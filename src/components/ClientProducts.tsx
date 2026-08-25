@@ -1,14 +1,15 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/ProductCard";
-import { useProducts, useCategories, FilterOptions } from "@/hooks/queries";
+import { useProducts, FilterOptions } from "@/hooks/queries";
+// import { useCategories } from "@/hooks/queries";
+// import { ProductFilter } from "@/components/ProductFilter";
 import { ProductType } from "@/types";
 import { ErrorState } from "@/components/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BrandLoader } from "@/components/BrandLoader";
-import { ProductFilter } from "@/components/ProductFilter";
 import { useState, useMemo } from "react";
 
 // Helper functions (moved from hook to component for simplicity)
@@ -58,7 +59,7 @@ export default function ClientProducts() {
     error,
     refetch: retry,
   } = useProducts();
-  const { data: categories = [] } = useCategories();
+  // const { data: categories = [] } = useCategories();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<FilterOptions>({
@@ -66,6 +67,7 @@ export default function ClientProducts() {
     stockFilter: "all",
     categoryFilter: "all",
   });
+  // searchTerm / filters kept so re-enabling search UI is a comment flip
 
   // Process products with search, filters, and sorting
   //useMemo is used to memoize the function
@@ -98,7 +100,7 @@ export default function ClientProducts() {
   return (
     <ErrorBoundary>
       <>
-        {/* Search Input */}
+        {/* Search + filters temporarily disabled on landing — re-enable later
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,14 +116,12 @@ export default function ClientProducts() {
           />
         </motion.div>
 
-        {/* Product Filter */}
         <ProductFilter
           filters={filters}
           onFilterChange={setFilters}
           categories={categories}
         />
 
-        {/* Product Count and Reset */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -134,7 +134,6 @@ export default function ClientProducts() {
             </span>
           </div>
 
-          {/* Reset Filters Button */}
           {(filters.sortBy !== "default" ||
             filters.stockFilter !== "all" ||
             filters.categoryFilter !== "all" ||
@@ -154,6 +153,7 @@ export default function ClientProducts() {
             </button>
           )}
         </motion.div>
+        */}
 
         {/* Products grid */}
         <div className="py-4">

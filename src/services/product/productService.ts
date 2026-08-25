@@ -8,6 +8,7 @@ export const productService = {
       const { data, error } = await supabase
         .from('products')
         .select('*, category:categories(*)')
+        .eq('is_visible', true)
         .order('title');
 
       if (error) {
@@ -28,6 +29,7 @@ export const productService = {
         .from('products')
         .select('*, category:categories(*)')
         .eq('product_id', id)
+        .eq('is_visible', true)
         .single();
 
       if (error) {
@@ -51,6 +53,7 @@ export const productService = {
         .from('products')
         .select('*, category:categories(*)')
         .eq('category_id', categoryId)
+        .eq('is_visible', true)
         .order('title');
 
       if (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +17,7 @@ import {
   DollarSign,
   Activity,
   Settings,
+  FolderOpen,
 } from "lucide-react";
 import { adminProductService } from "@/services/admin/adminProductService";
 import { adminOrderService } from "@/services/admin/adminOrderService";
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -58,8 +60,9 @@ export default function AdminDashboard() {
       return;
     }
 
-    if (isAdmin) {
-      fetchDashboardData();
+    if (isAdmin && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      void fetchDashboardData();
     }
   }, [isAdmin, adminLoading, router]);
 
@@ -221,11 +224,17 @@ export default function AdminDashboard() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Link href="/admin/products">
               <Button className="w-full cursor-pointer" variant="outline">
                 <Package className="mr-2 h-4 w-4" />
                 Manage Products
+              </Button>
+            </Link>
+            <Link href="/admin/categories">
+              <Button className="w-full cursor-pointer" variant="outline">
+                <FolderOpen className="mr-2 h-4 w-4" />
+                Manage Categories
               </Button>
             </Link>
             <Link href="/admin/orders">

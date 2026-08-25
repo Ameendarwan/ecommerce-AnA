@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import ShoppingSkeleton from "@/components/ShoppingSkeleton";
 import { Button } from "@/components/ui/button";
@@ -25,92 +25,113 @@ export default function CartShoppingPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex items-center">
-        <Link href="/" className="text-primary flex items-center">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Shopping
-        </Link>
-        <h1 className="ml-4 text-3xl font-bold">Your Shopping Cart</h1>
-      </div>
+    <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-8">
+      <h1 className="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">
+        Your Shopping Cart
+      </h1>
 
       {cartItems.length === 0 ? (
-        <div className="p-8 text-center">
-          <h2 className="mb-4 text-xl">Your cart is empty</h2>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <h2 className="mb-4 text-xl font-medium">Your cart is empty</h2>
           <Link href="/">
             <Button className="cursor-pointer">Continue Shopping</Button>
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="md:col-span-2">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+          <div className="flex flex-col gap-4 lg:col-span-2">
             {cartItems.map((item) => (
-              <Card key={item.product_id} className="mb-4">
-                <div className="flex flex-col sm:flex-row">
-                  <div className="p-4 sm:w-1/4">
-                    <Image
-                      src={item.image || ""}
-                      alt={item.title}
-                      width={100}
-                      height={100}
-                      className="h-auto w-full object-cover"
-                    />
-                  </div>
-                  <CardContent className="flex-1 p-4">
-                    <CardTitle className="mb-2 text-xl">{item.title}</CardTitle>
-                    <p className="text-muted-foreground mb-2 line-clamp-2">
-                      {item.description}
-                    </p>
-                    <p className="text-lg font-bold">
-                      {formatCurrency(item.price)}
-                    </p>
-                    {item.stock <= 1 && (
-                      <p className="text-muted-foreground mt-1 text-sm">
-                        Unique used item — 1 available
-                      </p>
+              <Card
+                key={item.product_id}
+                className="gap-0 overflow-hidden py-0"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-stretch">
+                  <div className="bg-muted relative aspect-square w-full shrink-0 sm:aspect-auto sm:h-auto sm:w-36 md:w-40">
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 160px"
+                      />
+                    ) : (
+                      <div className="text-muted-foreground flex h-full min-h-36 items-center justify-center text-sm">
+                        No image
+                      </div>
                     )}
+                  </div>
 
-                    <div className="mt-4 flex items-center">
-                      {item.stock > 1 && (
-                        <>
-                          <Button
-                            type="button"
-                            className="border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 cursor-pointer rounded-md border p-0 shadow-xs"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              updateQuantity(item.product_id, -1);
-                            }}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="mx-3">{item.quantity}</span>
-                          <Button
-                            type="button"
-                            className="border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 cursor-pointer rounded-md border p-0 shadow-xs"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              updateQuantity(item.product_id, 1);
-                            }}
-                            disabled={item.quantity >= item.stock}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
+                  <CardContent className="flex flex-1 flex-col justify-between gap-4 px-4 py-4 sm:px-5">
+                    <div className="space-y-1">
+                      <h2 className="text-base font-semibold leading-snug sm:text-lg">
+                        {item.title}
+                      </h2>
+                      <p className="text-muted-foreground line-clamp-2 text-sm">
+                        {item.description}
+                      </p>
+                      <p className="pt-1 text-base font-bold">
+                        {formatCurrency(item.price)}
+                      </p>
                       {item.stock <= 1 && (
-                        <span className="text-muted-foreground mr-4 text-sm">
-                          Qty: {item.quantity}
-                        </span>
+                        <p className="text-muted-foreground text-sm">
+                          Unique used item — 1 available
+                        </p>
                       )}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        {item.stock > 1 ? (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="size-9 shrink-0 cursor-pointer"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                updateQuantity(item.product_id, -1);
+                              }}
+                            >
+                              <Minus className="size-4" />
+                            </Button>
+                            <span className="min-w-8 text-center text-sm font-medium tabular-nums">
+                              {item.quantity}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="size-9 shrink-0 cursor-pointer"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                updateQuantity(item.product_id, 1);
+                              }}
+                              disabled={item.quantity >= item.stock}
+                            >
+                              <Plus className="size-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">
+                            Qty: {item.quantity}
+                          </span>
+                        )}
+                      </div>
+
                       <Button
                         type="button"
-                        className="text-destructive hover:bg-accent hover:text-accent-foreground ml-4 cursor-pointer"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive size-9 shrink-0 cursor-pointer"
                         onClick={(e) => {
                           e.preventDefault();
                           removeFromCart(item.product_id);
                         }}
+                        aria-label="Remove from cart"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </div>
                   </CardContent>
@@ -119,31 +140,39 @@ export default function CartShoppingPage() {
             ))}
           </div>
 
-          <div className="md:col-span-1">
-            <Card>
-              <CardHeader>
+          <div className="lg:col-span-1">
+            <Card className="sticky top-20 gap-0 py-0">
+              <CardHeader className="px-4 py-4 sm:px-5">
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>{formatCurrency(subtotal)}</span>
+              <CardContent className="px-4 pb-4 sm:px-5">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium tabular-nums">
+                      {formatCurrency(subtotal)}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Shipping (Pakistan)</span>
-                    <span>{formatCurrency(SHIPPING_PKR)}</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Shipping (Pakistan)
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {formatCurrency(SHIPPING_PKR)}
+                    </span>
                   </div>
-                  <div className="flex justify-between border-t pt-4 text-lg font-bold">
+                  <div className="flex items-center justify-between border-t pt-3 text-base font-bold">
                     <span>Total</span>
-                    <span>{formatCurrency(subtotal + SHIPPING_PKR)}</span>
+                    <span className="tabular-nums">
+                      {formatCurrency(subtotal + SHIPPING_PKR)}
+                    </span>
                   </div>
-                  <p className="text-muted-foreground pt-2 text-sm">
+                  <p className="text-muted-foreground pt-1 text-sm">
                     Payment: Cash on Delivery (COD)
                   </p>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="border-t px-4 py-4 sm:px-5">
                 <Link href="/checkout" className="w-full">
                   <Button className="w-full cursor-pointer">
                     Proceed to Checkout

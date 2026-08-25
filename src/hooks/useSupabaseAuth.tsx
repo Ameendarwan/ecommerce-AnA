@@ -13,22 +13,27 @@ export function useSupabaseAuth() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      // If user logs in, ensure they exist in our profiles table
-      if (session?.user) {
-        ensureUserProfile(session.user);
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setUser((prev) => {
+        const nextUser = nextSession?.user ?? null;
+        // Keep same reference when it's the same user (TOKEN_REFRESHED on focus)
+        if (prev?.id && nextUser?.id && prev.id === nextUser.id) {
+          return prev;
+        }
+        return nextUser;
+      });
+      if (nextSession?.user) {
+        void ensureUserProfile(nextSession.user);
       }
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      // If we have a user, ensure they exist in our profiles table
-      if (session?.user) {
-        ensureUserProfile(session.user);
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
+      if (initialSession?.user) {
+        void ensureUserProfile(initialSession.user);
       }
       setLoading(false);
     });

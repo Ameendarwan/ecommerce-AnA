@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,8 @@ import {
   CreateProductData,
   ProductWithDetails,
 } from "@/services/admin/adminProductService";
-import { useCategories } from "@/hooks/queries";
+import { adminCategoryService } from "@/services/admin/adminCategoryService";
+import { CategoryType, ProductBadge } from "@/types";
 import {
   Select,
   SelectContent,
@@ -44,6 +46,11 @@ interface FormData {
   stock: string;
   sku: string;
   category_id: string;
+  is_visible: boolean;
+  show_sale_tag: boolean;
+  show_badge: boolean;
+  discount_percent: string;
+  badge: ProductBadge;
 }
 
 interface PreviewItem {
@@ -53,6 +60,20 @@ interface PreviewItem {
   existing?: boolean;
 }
 
+const defaultFormData: FormData = {
+  title: "",
+  description: "",
+  price: "",
+  stock: "1",
+  sku: "",
+  category_id: "no-category",
+  is_visible: true,
+  show_sale_tag: false,
+  show_badge: false,
+  discount_percent: "0",
+  badge: "used",
+};
+
 export function ProductFormModal({
   isOpen,
   onClose,
@@ -60,25 +81,36 @@ export function ProductFormModal({
   product,
   title,
 }: ProductFormModalProps) {
-  const [formData, setFormData] = useState<FormData>({
-    title: "",
-    description: "",
-    price: "",
-    stock: "1",
-    sku: "",
-    category_id: "no-category",
-  });
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [previews, setPreviews] = useState<PreviewItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [categories, setCategories] = useState<CategoryType[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-    error: categoriesError,
-    refetch: refetchCategories,
-  } = useCategories();
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      setCategoriesError(null);
+      const data = await adminCategoryService.getAllCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      setCategoriesError(
+        error instanceof Error ? error.message : "Failed to load categories",
+      );
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      void fetchCategories();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (product) {
@@ -89,6 +121,11 @@ export function ProductFormModal({
         stock: product.stock?.toString() || "1",
         sku: product.sku || "",
         category_id: product.category_id?.toString() || "no-category",
+        is_visible: product.is_visible ?? true,
+        show_sale_tag: product.show_sale_tag ?? false,
+        show_badge: product.show_badge ?? true,
+        discount_percent: String(product.discount_percent ?? 0),
+        badge: product.badge === "new" ? "new" : "used",
       });
       const existingImages =
         product.images && product.images.length > 0
@@ -101,17 +138,10 @@ export function ProductFormModal({
           id: `existing-${i}-${url}`,
           url,
           existing: true,
-        }))
+        })),
       );
     } else {
-      setFormData({
-        title: "",
-        description: "",
-        price: "",
-        stock: "1",
-        sku: "",
-        category_id: "no-category",
-      });
+      setFormData(defaultFormData);
       setPreviews([]);
     }
     setErrors({});
@@ -139,6 +169,13 @@ export function ProductFormModal({
       const stock = parseInt(formData.stock, 10);
       if (isNaN(stock) || stock < 0) {
         newErrors.stock = "Stock must be 0 or more";
+      }
+    }
+
+    if (formData.discount_percent.trim()) {
+      const discount = parseInt(formData.discount_percent, 10);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        newErrors.discount_percent = "Discount must be between 0 and 100";
       }
     }
 
@@ -198,7 +235,7 @@ export function ProductFormModal({
 
       const uploaded = await uploadProductImages(
         newFiles,
-        product?.product_id
+        product?.product_id,
       );
       const allImages = [...existingUrls, ...uploaded];
 
@@ -214,13 +251,21 @@ export function ProductFormModal({
           formData.category_id && formData.category_id !== "no-category"
             ? parseInt(formData.category_id, 10)
             : undefined,
+        is_visible: formData.is_visible,
+        show_sale_tag: formData.show_sale_tag,
+        show_badge: formData.show_badge,
+        discount_percent: Math.min(
+          100,
+          Math.max(0, parseInt(formData.discount_percent || "0", 10) || 0),
+        ),
+        badge: formData.badge,
       };
 
       await onSubmit(submitData);
     } catch (error) {
       console.error("Error submitting product:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to save product"
+        error instanceof Error ? error.message : "Failed to save product",
       );
     } finally {
       setLoading(false);
@@ -293,6 +338,32 @@ export function ProductFormModal({
             </div>
 
             <div className="space-y-1.5">
+              <Label htmlFor="discount_percent">Discount (%)</Label>
+              <Input
+                id="discount_percent"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={formData.discount_percent}
+                onChange={(e) =>
+                  handleInputChange("discount_percent", e.target.value)
+                }
+                placeholder="e.g. 30"
+              />
+              {errors.discount_percent && (
+                <p className="text-destructive text-sm">
+                  {errors.discount_percent}
+                </p>
+              )}
+              <p className="text-muted-foreground text-xs">
+                Shows strikethrough price and “X% OFF” on the storefront
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
               <Label htmlFor="stock">Stock *</Label>
               <Input
                 id="stock"
@@ -306,9 +377,7 @@ export function ProductFormModal({
                 <p className="text-destructive text-sm">{errors.stock}</p>
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="sku">SKU</Label>
               <Input
@@ -318,44 +387,140 @@ export function ProductFormModal({
                 placeholder="Optional"
               />
             </div>
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="category">Category</Label>
-              {categoriesError && (
-                <div className="border-destructive/30 bg-destructive/10 mb-1 space-y-2 rounded-md border p-2 text-sm">
-                  <p className="text-destructive">{categoriesError.message}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void refetchCategories()}
+          <div className="space-y-1.5">
+            <Label htmlFor="category">Category</Label>
+            {categoriesError && (
+              <div className="border-destructive/30 bg-destructive/10 mb-1 space-y-2 rounded-md border p-2 text-sm">
+                <p className="text-destructive">{categoriesError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void fetchCategories()}
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            <Select
+              value={formData.category_id}
+              onValueChange={(value) =>
+                handleInputChange("category_id", value ?? "no-category")
+              }
+              disabled={categoriesLoading || !!categoriesError}
+              modal={false}
+              items={[
+                { label: "No category", value: "no-category" },
+                ...categories.map((category) => ({
+                  value: category.id.toString(),
+                  label:
+                    category.is_visible === false
+                      ? `${category.name} (hidden)`
+                      : category.name,
+                })),
+              ]}
+            >
+              <SelectTrigger id="category" className="w-full">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                <SelectItem value="no-category">No category</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem
+                    key={category.id}
+                    value={category.id.toString()}
                   >
-                    Retry
-                  </Button>
-                </div>
-              )}
-              <Select
-                value={formData.category_id}
-                onValueChange={(value) =>
-                  handleInputChange("category_id", value ?? "no-category")
+                    {category.name}
+                    {category.is_visible === false ? " (hidden)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3 rounded-md border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label htmlFor="is_visible">Show product</Label>
+                <p className="text-muted-foreground text-xs">
+                  Hidden products stay off the storefront
+                </p>
+              </div>
+              <Switch
+                id="is_visible"
+                checked={formData.is_visible}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, is_visible: checked }))
                 }
-                disabled={categoriesLoading || !!categoriesError}
-              >
-                <SelectTrigger id="category" className="w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-category">No category</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem
-                      key={category.id}
-                      value={category.id.toString()}
-                    >
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
+            </div>
+
+            <div className="border-border border-t pt-3">
+              <p className="mb-3 text-sm font-medium">Badges</p>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label htmlFor="show_sale_tag">Sale tag</Label>
+                    <p className="text-muted-foreground text-xs">
+                      Show a Sale badge on the product image
+                    </p>
+                  </div>
+                  <Switch
+                    id="show_sale_tag"
+                    checked={formData.show_sale_tag}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        show_sale_tag: checked,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label htmlFor="show_badge">New/Used badge</Label>
+                    <p className="text-muted-foreground text-xs">
+                      Show the condition badge on the storefront
+                    </p>
+                  </div>
+                  <Switch
+                    id="show_badge"
+                    checked={formData.show_badge}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, show_badge: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="badge">Badge type</Label>
+                  <Select
+                    value={formData.badge}
+                    onValueChange={(value) => {
+                      if (value !== "new" && value !== "used") return;
+                      setFormData((prev) => ({ ...prev, badge: value }));
+                    }}
+                    items={[
+                      { label: "New", value: "new" },
+                      { label: "Used", value: "used" },
+                    ]}
+                    modal={false}
+                    disabled={!formData.show_badge}
+                  >
+                    <SelectTrigger id="badge" className="w-full">
+                      <SelectValue placeholder="Select badge" />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false}>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="used">Used</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
 

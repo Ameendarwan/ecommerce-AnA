@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ShoppingCart,
-  Heart,
-  Share2,
+  // Heart,
+  // Share2,
   Minus,
   Plus,
   ChevronLeft,
@@ -25,6 +25,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { SHIPPING_PKR } from "@/lib/shipping";
 import { ReviewTab } from "./_components/review-tab";
+import {
+  getProductSalePrice,
+  hasActiveDiscount,
+  normalizeDiscountPercent,
+} from "@/utils/productPricing";
 
 type ProductDetailsClientProps = {
   product: ProductType;
@@ -37,13 +42,16 @@ export default function ProductDetailsClient({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
+  // const [isFavorited, setIsFavorited] = useState(false);
 
   const uniqueItem = product.stock <= 1;
   const alreadyInCart = cartItems.some(
     (item) => item.product_id === product.product_id,
   );
   const soldOut = product.stock <= 0;
+  const discountPercent = normalizeDiscountPercent(product.discount_percent);
+  const onSale = hasActiveDiscount(discountPercent);
+  const salePrice = getProductSalePrice(product);
 
   const productImages =
     product.images && product.images.length > 0
@@ -146,6 +154,7 @@ export default function ProductDetailsClient({
                 </>
               )}
 
+              {/* Heart + Share
               <div className="absolute top-4 right-4 flex gap-2">
                 <Button
                   variant="outline"
@@ -167,6 +176,13 @@ export default function ProductDetailsClient({
                   <Share2 className="h-4 w-4" />
                 </Button>
               </div>
+              */}
+
+              {product.show_sale_tag && (
+                <div className="absolute top-0 right-0 z-20 bg-black px-2.5 py-1 text-[11px] leading-none font-medium text-white">
+                  Sale
+                </div>
+              )}
             </div>
 
             {productImages.length > 1 && (
@@ -218,31 +234,50 @@ export default function ProductDetailsClient({
               </motion.div> */}
 
               <motion.div
-                className="mb-6 flex items-center gap-3"
+                className="mb-6 space-y-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <span className="text-foreground text-3xl font-bold">
-                  {formatCurrency(product.price)}
-                </span>
-                {soldOut ? (
-                  <Badge variant="destructive">Sold Out</Badge>
-                ) : uniqueItem ? (
-                  <Badge
-                    variant="secondary"
-                    className="bg-amber-100 text-amber-900"
-                  >
-                    Unique used item — 1 available
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-800"
-                  >
-                    In Stock ({product.stock} available)
-                  </Badge>
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  {onSale && (
+                    <span className="text-muted-foreground text-xl line-through">
+                      {formatCurrency(product.price)}
+                    </span>
+                  )}
+                  <span className="text-foreground text-3xl font-bold">
+                    {formatCurrency(salePrice)}
+                  </span>
+                </div>
+                {onSale && (
+                  <span className="inline-flex rounded-full bg-[#f05a2d] px-3.5 py-1 text-xs font-bold tracking-wide text-white uppercase">
+                    {discountPercent}% OFF
+                  </span>
                 )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {(product.show_badge ?? true) && (
+                    <Badge variant="secondary">
+                      {product.badge === "new" ? "New" : "Used"}
+                    </Badge>
+                  )}
+                  {soldOut ? (
+                    <Badge variant="destructive">Sold Out</Badge>
+                  ) : uniqueItem ? (
+                    <Badge
+                      variant="secondary"
+                      className="bg-amber-100 text-amber-900"
+                    >
+                      Unique used item — 1 available
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-800"
+                    >
+                      In Stock ({product.stock} available)
+                    </Badge>
+                  )}
+                </div>
               </motion.div>
             </div>
 
@@ -318,7 +353,7 @@ export default function ProductDetailsClient({
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart —{" "}
                     {formatCurrency(
-                      product.price * (uniqueItem ? 1 : quantity),
+                      salePrice * (uniqueItem ? 1 : quantity),
                     )}
                   </>
                 )}
@@ -353,7 +388,13 @@ export default function ProductDetailsClient({
               <div className="flex items-center gap-3">
                 <RotateCcw className="text-primary h-5 w-5" />
                 <div>
-                  <p className="text-sm font-medium">Pre-loved</p>
+                  <p className="text-sm font-medium">
+                    {(product.show_badge ?? true)
+                      ? product.badge === "new"
+                        ? "New"
+                        : "Pre-loved"
+                      : "Quality checked"}
+                  </p>
                   <p className="text-muted-foreground text-xs">
                     Usually one of a kind
                   </p>
