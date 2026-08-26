@@ -42,13 +42,7 @@ export function ReviewedCard({ productId, limit }: ReviewedCardProps) {
   }
 
   if (reviewsData?.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">No reviews yet.</p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (

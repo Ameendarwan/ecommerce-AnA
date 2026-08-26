@@ -138,7 +138,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           {product.title}
         </h3>
 
-        <div className="space-y-1.5 min-h-[3.25rem]">
+        <div className="min-h-[3.25rem] space-y-1.5">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
             {onSale && (
               <span className="text-muted-foreground text-sm line-through">
@@ -149,19 +149,16 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
               {formatCurrency(salePrice)}
             </span>
           </div>
-          {onSale && (
-            <span className="inline-flex rounded-full bg-[#f05a2d] px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
-              {discountPercent}% OFF
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          {(product.show_badge ?? true) && (
-            <Badge className="bg-foreground text-background hover:bg-foreground rounded-full px-2.5 py-0.5 text-[11px] font-medium">
-              {conditionLabel}
-            </Badge>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {onSale && (
+              <span className="inline-flex rounded-full bg-[#f05a2d] px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
+                {discountPercent}% OFF
+              </span>
+            )}
+            {(product.show_badge ?? true) && (
+              <Badge variant="tag">{conditionLabel}</Badge>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

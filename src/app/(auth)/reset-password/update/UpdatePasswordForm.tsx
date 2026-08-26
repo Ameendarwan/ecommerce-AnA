@@ -118,8 +118,8 @@ export function UpdatePasswordForm({ message }: { message: string | null }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <CardContent className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col gap-4">
+      <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
         {error && (
           <div className="bg-destructive/15 text-destructive rounded-md p-3 text-sm">
             {error}
@@ -195,7 +195,7 @@ export function UpdatePasswordForm({ message }: { message: string | null }) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col">
+      <CardFooter className="mt-auto flex shrink-0 flex-col">
         <Button
           type="submit"
           className="hover:bg-primary/90 w-full cursor-pointer"

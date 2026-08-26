@@ -1,13 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Edit,
+  Eye,
+  EyeOff,
+  FolderOpen,
+  MoreVertical,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,65 +33,108 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  FolderOpen,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
+import {
+  AdminDataTable,
+  AdminEntityCell,
+  AdminStatusPill,
+  AdminTablePagination,
+  AdminTableToolbar,
+  type AdminDataTableColumn,
+} from "@/components/admin/table";
 import {
   adminCategoryService,
+  CategoryFilters,
   CreateCategoryData,
 } from "@/services/admin/adminCategoryService";
 import { CategoryType } from "@/types";
-import { toast } from "sonner";
-import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
-import { useQueryClient } from "@tanstack/react-query";
 import { invalidateStorefrontCatalog } from "@/lib/cache/invalidateStorefrontCatalog";
+
+const VISIBILITY_OPTIONS = [
+  { value: "all", label: "All Visibility" },
+  { value: "visible", label: "Visible" },
+  { value: "hidden", label: "Hidden" },
+] as const;
+
+const VISIBILITY_STYLES: Record<string, string> = {
+  visible: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  hidden: "bg-slate-50 text-slate-600 ring-slate-200",
+};
+
+const VISIBILITY_DOTS: Record<string, string> = {
+  visible: "bg-emerald-500",
+  hidden: "bg-slate-400",
+};
 
 export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
   const [categories, setCategories] = useState<CategoryType[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<CategoryFilters>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCategories, setTotalCategories] = useState(0);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryType | null>(
     null,
   );
-  const [deletingCategory, setDeletingCategory] =
+  const [categoryToDelete, setCategoryToDelete] =
     useState<CategoryType | null>(null);
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formVisible, setFormVisible] = useState(true);
   const [formError, setFormError] = useState("");
-
-  useEffect(() => {
-    void fetchCategories();
-  }, []);
+  const pageLimit = 10;
 
   const syncStorefront = () => {
     void invalidateStorefrontCatalog(queryClient);
   };
 
-  const fetchCategories = async ({
-    silent = false,
-  }: { silent?: boolean } = {}) => {
+  const fetchCategories = useCallback(async () => {
     try {
-      if (!silent) setInitialLoading(true);
-      const data = await adminCategoryService.getAllCategories();
-      setCategories(data);
+      setLoading(true);
+      const data = await adminCategoryService.getAllCategories(
+        filters,
+        currentPage,
+        pageLimit,
+      );
+      setCategories(data.categories);
+      setTotalCategories(data.total);
     } catch (error) {
       console.error("Error fetching categories:", error);
       toast.error("Failed to load categories");
     } finally {
-      if (!silent) setInitialLoading(false);
+      setLoading(false);
     }
-  };
+  }, [filters, currentPage]);
+
+  useEffect(() => {
+    void fetchCategories();
+  }, [fetchCategories]);
+
+  const filteredCategories = useMemo(() => {
+    if (!searchTerm.trim()) return categories;
+    const q = searchTerm.toLowerCase();
+    return categories.filter(
+      (category) =>
+        category.name.toLowerCase().includes(q) ||
+        category.description?.toLowerCase().includes(q),
+    );
+  }, [categories, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCategories / pageLimit));
 
   const openCreateModal = () => {
     setEditingCategory(null);
@@ -124,7 +183,7 @@ export default function AdminCategoriesPage() {
       }
 
       closeFormModal();
-      await fetchCategories({ silent: true });
+      await fetchCategories();
       syncStorefront();
     } catch (error) {
       console.error("Error saving category:", error);
@@ -170,13 +229,14 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const handleDeleteCategory = async (id: number) => {
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
     try {
-      setDeleting(true);
-      await adminCategoryService.deleteCategory(id);
+      setDeletingId(categoryToDelete.id);
+      await adminCategoryService.deleteCategory(categoryToDelete.id);
       toast.success("Category deleted");
-      setDeletingCategory(null);
-      setCategories((prev) => prev.filter((category) => category.id !== id));
+      setCategoryToDelete(null);
+      await fetchCategories();
       syncStorefront();
     } catch (error) {
       console.error("Error deleting category:", error);
@@ -186,17 +246,120 @@ export default function AdminCategoriesPage() {
           : "Failed to delete category. It may still have products.",
       );
     } finally {
-      setDeleting(false);
+      setDeletingId(null);
     }
   };
 
-  const filteredCategories = categories.filter(
-    (category) =>
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+  const columns: AdminDataTableColumn<CategoryType>[] = useMemo(
+    () => [
+      {
+        key: "category",
+        header: "Category",
+        cellClassName: "max-w-[220px]",
+        render: (category) => {
+          const initials = category.name
+            .split(" ")
+            .map((part) => part[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase();
+
+          return (
+            <AdminEntityCell
+              initials={initials}
+              title={category.name}
+              subtitle={`ID #${category.id}`}
+            />
+          );
+        },
+      },
+      {
+        key: "description",
+        header: "Description",
+        cellClassName: "max-w-[280px]",
+        render: (category) => (
+          <p className="line-clamp-2 text-sm text-slate-600">
+            {category.description?.trim() || "—"}
+          </p>
+        ),
+      },
+      {
+        key: "visibility",
+        header: "Visibility",
+        render: (category) => {
+          const isVisible = category.is_visible ?? true;
+          return (
+            <AdminStatusPill
+              label={isVisible ? "Visible" : "Hidden"}
+              tone={isVisible ? "visible" : "hidden"}
+              styles={VISIBILITY_STYLES}
+              dots={VISIBILITY_DOTS}
+            />
+          );
+        },
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        headerClassName: "w-12 text-right",
+        cellClassName: "text-right",
+        render: (category) => {
+          const isBusy =
+            togglingId === category.id || deletingId === category.id;
+          const isVisible = category.is_visible ?? true;
+
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    className="text-muted-foreground hover:bg-muted inline-flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors disabled:pointer-events-none disabled:opacity-50"
+                    aria-label={`Actions for ${category.name}`}
+                  >
+                    <MoreVertical className="size-4" />
+                  </button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => openEditModal(category)}>
+                    <Edit className="size-4" />
+                    Edit category
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => void handleToggleVisibility(category)}
+                  >
+                    {isVisible ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                    {isVisible ? "Hide category" : "Show category"}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setCategoryToDelete(category)}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete category
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    [togglingId, deletingId],
   );
 
-  if (initialLoading) {
+  if (loading && categories.length === 0) {
     return <LoadingSpinner />;
   }
 
@@ -207,117 +370,83 @@ export default function AdminCategoriesPage() {
           <h1 className="text-3xl font-bold tracking-tight">
             Category Management
           </h1>
-          <p className="text-muted-foreground">
-            Show or hide categories in the storefront sidebar
+          <p className="text-muted-foreground mt-1 text-sm">
+            Browse, filter, and manage storefront categories.
           </p>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={openCreateModal} className="cursor-pointer">
+          <Plus className="mr-2 size-4" />
           Add Category
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center space-x-2">
-            <Search className="text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search categories..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <AdminTableToolbar
+        searchPlaceholder="Search by name or description…"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={
+          <Select
+            value={
+              filters.isVisible === undefined
+                ? "all"
+                : filters.isVisible
+                  ? "visible"
+                  : "hidden"
+            }
+            onValueChange={(value) => {
+              const next = value ?? "all";
+              setFilters({
+                isVisible:
+                  next === "all"
+                    ? undefined
+                    : next === "visible"
+                      ? true
+                      : false,
+              });
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="h-10! w-full rounded-lg data-[size=default]:h-10! sm:w-40">
+              <SelectValue placeholder="All Visibility">
+                {VISIBILITY_OPTIONS.find(
+                  (option) =>
+                    option.value ===
+                    (filters.isVisible === undefined
+                      ? "all"
+                      : filters.isVisible
+                        ? "visible"
+                        : "hidden"),
+                )?.label ?? "All Visibility"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {VISIBILITY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredCategories.map((category) => {
-          const visible = category.is_visible ?? true;
-          return (
-            <Card key={category.id}>
-              <CardHeader className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                  <Badge variant={visible ? "secondary" : "outline"}>
-                    {visible ? (
-                      <>
-                        <Eye className="mr-1 h-3 w-3" />
-                        Visible
-                      </>
-                    ) : (
-                      <>
-                        <EyeOff className="mr-1 h-3 w-3" />
-                        Hidden
-                      </>
-                    )}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground line-clamp-2 text-sm">
-                  {category.description || "No description"}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium">Show in sidebar</p>
-                    <p className="text-muted-foreground text-xs">
-                      Controls storefront navigation
-                    </p>
-                  </div>
-                  <Switch
-                    checked={visible}
-                    disabled={togglingId === category.id}
-                    onCheckedChange={() => void handleToggleVisibility(category)}
-                  />
-                </div>
+      <AdminDataTable
+        columns={columns}
+        data={filteredCategories}
+        getRowKey={(category) => category.id}
+        emptyIcon={<FolderOpen className="size-10 opacity-40" />}
+        emptyTitle="No categories found"
+        isLoading={loading}
+      />
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => openEditModal(category)}
-                  >
-                    <Edit className="mr-2 h-3 w-3" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                    onClick={() => setDeletingCategory(category)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {filteredCategories.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FolderOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <h3 className="text-muted-foreground mb-2 text-lg font-medium">
-              No categories found
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm
-                ? "Try adjusting your search terms."
-                : "Create your first category to organize products."}
-            </p>
-            {!searchTerm && (
-              <Button onClick={openCreateModal}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Category
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      <AdminTablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalCategories}
+        visibleCount={filteredCategories.length}
+        onPageChange={setCurrentPage}
+        isLoading={loading}
+      />
 
       <Dialog open={showFormModal} onOpenChange={closeFormModal}>
         <DialogContent className="sm:max-w-md">
@@ -395,12 +524,16 @@ export default function AdminCategoriesPage() {
       </Dialog>
 
       <DeleteConfirmModal
-        isOpen={!!deletingCategory}
-        onClose={() => setDeletingCategory(null)}
-        onConfirm={() => handleDeleteCategory(deletingCategory!.id)}
+        isOpen={Boolean(categoryToDelete)}
+        onClose={() => setCategoryToDelete(null)}
+        onConfirm={handleDeleteCategory}
         title="Delete Category"
-        description={`Are you sure you want to delete "${deletingCategory?.name}"? This cannot be undone.`}
-        loading={deleting}
+        description={
+          categoryToDelete
+            ? `Are you sure you want to delete "${categoryToDelete.name}"? This cannot be undone.`
+            : "Delete this category? This cannot be undone."
+        }
+        loading={deletingId !== null}
       />
     </div>
   );

@@ -95,7 +95,7 @@ export function ProductFormModal({
       setCategoriesLoading(true);
       setCategoriesError(null);
       const data = await adminCategoryService.getAllCategories();
-      setCategories(data);
+      setCategories(data.categories);
     } catch (error) {
       console.error("Error loading categories:", error);
       setCategoriesError(
@@ -277,6 +277,16 @@ export function ProductFormModal({
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const priceNum = parseFloat(formData.price);
+  const discountNum = Math.min(
+    100,
+    Math.max(0, parseInt(formData.discount_percent || "0", 10) || 0),
+  );
+  const priceAfterDiscount =
+    Number.isFinite(priceNum) && priceNum > 0
+      ? String(Math.round(priceNum * (1 - discountNum / 100)))
+      : "";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -358,6 +368,21 @@ export function ProductFormModal({
               )}
               <p className="text-muted-foreground text-xs">
                 Shows strikethrough price and “X% OFF” on the storefront
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="price_after_discount">Price after discount</Label>
+              <Input
+                id="price_after_discount"
+                type="number"
+                value={priceAfterDiscount}
+                disabled
+                readOnly
+                placeholder="—"
+              />
+              <p className="text-muted-foreground text-xs">
+                Calculated from price and discount
               </p>
             </div>
           </div>

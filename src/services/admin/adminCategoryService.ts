@@ -10,19 +10,37 @@ export interface CreateCategoryData {
 
 export type UpdateCategoryData = Partial<CreateCategoryData>;
 
+export interface CategoryFilters {
+  isVisible?: boolean;
+}
+
 export const adminCategoryService = {
-  async getAllCategories(): Promise<CategoryType[]> {
-    const { data, error } = await supabase
+  async getAllCategories(
+    filters: CategoryFilters = {},
+    page: number = 1,
+    limit: number = 1000,
+  ): Promise<{ categories: CategoryType[]; total: number }> {
+    let query = supabase
       .from("categories")
-      .select("*")
-      .order("name");
+      .select("*", { count: "exact" });
+
+    if (filters.isVisible !== undefined) {
+      query = query.eq("is_visible", filters.isVisible);
+    }
+
+    const { data, error, count } = await query
+      .order("name")
+      .range((page - 1) * limit, page * limit - 1);
 
     if (error) {
       console.error("Error fetching categories:", error);
       throw error;
     }
 
-    return (data || []) as CategoryType[];
+    return {
+      categories: (data || []) as CategoryType[],
+      total: count || 0,
+    };
   },
 
   async createCategory(categoryData: CreateCategoryData): Promise<CategoryType> {

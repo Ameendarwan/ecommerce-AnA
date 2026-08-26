@@ -30,60 +30,115 @@ export interface ProductWithDetails extends ProductType {
   average_rating?: number;
 }
 
+export interface ProductFilters {
+  categoryId?: number;
+  isVisible?: boolean;
+  lowStock?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+const LOW_STOCK_THRESHOLD = 5;
+
 /**
  * Admin service for product management
  * Requires admin privileges for all operations
  */
 export const adminProductService = {
   /**
-   * Get all products with additional details for admin view
+   * Get products with filters, pagination, and review stats for admin view
    */
-  async getAllProducts(): Promise<ProductWithDetails[]> {
+  async getAllProducts(
+    filters: ProductFilters = {},
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<{ products: ProductWithDetails[]; total: number }> {
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          `
+      let query = supabase.from("products").select(
+        `
 					*,
 					categories!products_category_id_fkey (
 						id,
 						name
 					)
 				`,
-        )
-        .order("created_at", { ascending: false });
+        { count: "exact" },
+      );
+
+      if (filters.categoryId) {
+        query = query.eq("category_id", filters.categoryId);
+      }
+      if (filters.isVisible !== undefined) {
+        query = query.eq("is_visible", filters.isVisible);
+      }
+      if (filters.lowStock) {
+        query = query.lte("stock", LOW_STOCK_THRESHOLD);
+      }
+      if (filters.dateFrom) {
+        query = query.gte("created_at", filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        const end = filters.dateTo.includes("T")
+          ? filters.dateTo
+          : `${filters.dateTo}T23:59:59.999Z`;
+        query = query.lte("created_at", end);
+      }
+
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
       if (error) {
         console.error("Error fetching all products:", error);
         throw error;
       }
 
-      // Get review statistics for each product
-      const productsWithStats = await Promise.all(
-        (data || []).map(async (product) => {
-          const { data: reviewStats } = await supabase
-            .from("reviews")
-            .select("rating")
-            .eq("product_id", product.product_id);
+      const productIds = (data || []).map((p) => p.product_id);
+      const reviewStatsByProduct = new Map<
+        string,
+        { total: number; average: number }
+      >();
 
-          const reviews = reviewStats || [];
-          const totalReviews = reviews.length;
-          const averageRating =
-            totalReviews > 0
-              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-                totalReviews
+      if (productIds.length > 0) {
+        const { data: reviewRows } = await supabase
+          .from("reviews")
+          .select("product_id, rating")
+          .in("product_id", productIds);
+
+        const buckets = new Map<string, number[]>();
+        for (const row of reviewRows || []) {
+          const list = buckets.get(row.product_id) || [];
+          list.push(row.rating);
+          buckets.set(row.product_id, list);
+        }
+
+        for (const [productId, ratings] of buckets) {
+          const total = ratings.length;
+          const average =
+            total > 0
+              ? ratings.reduce((sum, rating) => sum + rating, 0) / total
               : 0;
+          reviewStatsByProduct.set(productId, {
+            total,
+            average: Number(average.toFixed(1)),
+          });
+        }
+      }
 
-          return {
-            ...product,
-            category: product.categories,
-            total_reviews: totalReviews,
-            average_rating: Number(averageRating.toFixed(1)),
-          };
-        }),
-      );
+      const products: ProductWithDetails[] = (data || []).map((product) => {
+        const stats = reviewStatsByProduct.get(product.product_id);
+        return {
+          ...product,
+          category: product.categories ?? undefined,
+          total_reviews: stats?.total ?? 0,
+          average_rating: stats?.average ?? 0,
+        };
+      });
 
-      return productsWithStats;
+      return {
+        products,
+        total: count || 0,
+      };
     } catch (err) {
       console.error("Failed to get all products:", err);
       throw err;

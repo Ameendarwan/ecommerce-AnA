@@ -15,9 +15,9 @@ export default async function SignIn({ searchParams }: SignInProps) {
   const message = params.message ? String(params.message) : null;
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
+    <div className="bg-background flex h-[calc(100svh-var(--app-header-height,6rem))] items-center justify-center overflow-hidden p-4">
+      <Card className="flex max-h-full w-full max-w-md flex-col overflow-hidden">
+        <CardHeader className="shrink-0">
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>
             Enter your credentials to access your account

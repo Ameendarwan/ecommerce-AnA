@@ -2,10 +2,9 @@
 
 import { useState, useMemo } from "react";
 
-import { Progress } from "@/components/ui/progress";
 import { useGetProductReviews, useCreateReview } from "@/hooks/queries";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ProductType, ReviewType } from "@/types";
 import { Star } from "lucide-react";
@@ -14,28 +13,35 @@ import { toast } from "sonner";
 import { ReviewedCard } from "./reviewed-card";
 import { useQueryClient } from "@tanstack/react-query";
 import { reviewKeys } from "@/hooks/queries";
+import { AnimatePresence, motion } from "motion/react";
+import { questionService } from "@/services/question/questionService";
+
+const WHATSAPP_NUMBER = "923193860138";
 
 type ProductDetailsClientProps = {
   product: ProductType;
 };
 
+type ActiveForm = "review" | "question" | null;
+
 export function ReviewTab({ product }: ProductDetailsClientProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [activeForm, setActiveForm] = useState<ActiveForm>(null);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: reviewsData } = useGetProductReviews(product.product_id);
+  const [questionName, setQuestionName] = useState("");
+  const [questionEmail, setQuestionEmail] = useState("");
+  const [questionText, setQuestionText] = useState("");
 
+  const { data: reviewsData } = useGetProductReviews(product.product_id);
   const createReviewMutation = useCreateReview();
 
-  // Ensure reviews is always an array (handle null/undefined) with stable reference
   const reviews = useMemo(() => reviewsData ?? [], [reviewsData]);
 
-  // Check if current user has already reviewed
   const userReview = useMemo(() => {
     if (!user) return null;
     return (
@@ -43,28 +49,6 @@ export function ReviewTab({ product }: ProductDetailsClientProps) {
     );
   }, [reviews, user]);
 
-  // Calculate real rating distribution from actual reviews
-  const ratingDistribution = useMemo(() => {
-    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-
-    reviews.forEach((review) => {
-      if (review.rating >= 1 && review.rating <= 5) {
-        distribution[review.rating as keyof typeof distribution]++;
-      }
-    });
-
-    const total = reviews.length || 1;
-
-    return [5, 4, 3, 2, 1].map((stars) => ({
-      stars,
-      percentage: Math.round(
-        (distribution[stars as keyof typeof distribution] / total) * 100,
-      ),
-      count: distribution[stars as keyof typeof distribution],
-    }));
-  }, [reviews]);
-
-  // Calculate review stats from actual reviews
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return 0;
     return (
@@ -73,6 +57,36 @@ export function ReviewTab({ product }: ProductDetailsClientProps) {
   }, [reviews]);
 
   const reviewCount = reviews.length;
+
+  const resetReviewForm = () => {
+    setRating(0);
+    setComment("");
+    setHoveredRating(0);
+  };
+
+  const resetQuestionForm = () => {
+    setQuestionName("");
+    setQuestionEmail("");
+    setQuestionText("");
+  };
+
+  const handleWriteReview = () => {
+    if (!user) {
+      toast.error("Please sign in to leave a review");
+      return;
+    }
+    if (userReview) {
+      toast.info("You have already reviewed this product");
+      return;
+    }
+    setActiveForm("review");
+    resetQuestionForm();
+  };
+
+  const handleAskQuestion = () => {
+    setActiveForm("question");
+    resetReviewForm();
+  };
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -98,16 +112,13 @@ export function ReviewTab({ product }: ProductDetailsClientProps) {
         comment: comment.trim(),
       });
 
-      // Manually refetch reviews to ensure they update immediately
       await queryClient.refetchQueries({
         queryKey: reviewKeys.list(product.product_id),
       });
 
       toast.success("Review submitted successfully!");
-      setRating(0);
-      setComment("");
-      setHoveredRating(0);
-      setShowReviewForm(false);
+      resetReviewForm();
+      setActiveForm(null);
     } catch (error) {
       console.error("Error submitting review:", error);
     } finally {
@@ -115,179 +126,273 @@ export function ReviewTab({ product }: ProductDetailsClientProps) {
     }
   };
 
+  const handleSubmitQuestion = async () => {
+    if (!questionName.trim() || !questionEmail.trim() || !questionText.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await questionService.createQuestion({
+        productId: product.product_id,
+        name: questionName.trim(),
+        email: questionEmail.trim(),
+        question: questionText.trim(),
+        userId: user?.id ?? null,
+      });
+
+      const message = [
+        `Hi! I have a question about "${product.title}".`,
+        ``,
+        `Name: ${questionName.trim()}`,
+        `Email: ${questionEmail.trim()}`,
+        ``,
+        `Question: ${questionText.trim()}`,
+      ].join("\n");
+
+      window.open(
+        `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+
+      toast.success("Question submitted!");
+      resetQuestionForm();
+      setActiveForm(null);
+    } catch (error) {
+      console.error("Error submitting question:", error);
+      toast.error("Failed to submit question. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <Card>
-        <CardContent className="p-6">
-          <div className="mb-6 text-center">
-            <div className="mb-2 text-4xl font-bold">
-              {averageRating > 0 ? averageRating.toFixed(1) : "0.0"}
-            </div>
-            {averageRating > 0 && RenderStars(averageRating)}
-            <p className="text-muted-foreground mt-2 text-sm">
-              Based on {reviewCount.toLocaleString()}{" "}
-              {reviewCount === 1 ? "review" : "reviews"}
-            </p>
-          </div>
+    <div className="w-full">
+      <h2 className="text-foreground mb-10 text-center text-2xl font-semibold tracking-tight">
+        Customer Reviews
+      </h2>
 
+      <div className="mb-8 flex flex-col items-center justify-between gap-6">
+        <div className="flex flex-col items-center">
           {reviewCount > 0 ? (
-            <div className="space-y-3">
-              {ratingDistribution.map((item) => (
-                <div key={item.stars} className="flex items-center gap-3">
-                  <span className="w-6 text-sm">{item.stars}★</span>
-                  <Progress value={item.percentage} className="flex-1" />
-                  <span className="text-muted-foreground w-10 text-sm">
-                    {item.count}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="mb-1 flex items-center gap-2">
+                {RenderStars(averageRating, "lg")}
+                <span className="text-foreground text-lg font-semibold">
+                  {averageRating.toFixed(1)}
+                </span>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Based on {reviewCount.toLocaleString()}{" "}
+                {reviewCount === 1 ? "review" : "reviews"}
+              </p>
+            </>
           ) : (
-            <p className="text-muted-foreground text-center text-sm">
-              No ratings yet
-            </p>
+            <>
+              {RenderStars(0, "lg")}
+              <p className="text-muted-foreground mt-2 text-sm">
+                Be the first to write a review
+              </p>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="space-y-4 lg:col-span-2">
-        {/* Add Review Button */}
-        {user && !userReview && !showReviewForm && (
-          <Card>
-            <CardContent className="p-6">
-              <Button
-                onClick={() => setShowReviewForm(true)}
-                className="w-full cursor-pointer sm:w-auto"
-              >
-                Write a Review
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Review Form */}
-        {user && !userReview && showReviewForm && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Write a Review</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setRating(0);
-                    setComment("");
-                    setHoveredRating(0);
-                  }}
-                  className="cursor-pointer"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Rating</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoveredRating(star)}
-                      onMouseLeave={() => setHoveredRating(0)}
-                      className="cursor-pointer focus:outline-none"
-                    >
-                      <Star
-                        className={`h-6 w-6 transition-colors ${
-                          star <= (hoveredRating || rating)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Your Review
-                </label>
-                <Textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Share your experience with this product..."
-                  className="min-h-[100px]"
-                  maxLength={500}
-                />
-                <div className="text-muted-foreground mt-1 text-sm">
-                  {comment.length}/500 characters
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSubmitReview}
-                  disabled={!comment.trim() || rating === 0 || isSubmitting}
-                  className="cursor-pointer"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Review"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setRating(0);
-                    setComment("");
-                    setHoveredRating(0);
-                  }}
-                  className="cursor-pointer"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {user && userReview && (
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground text-sm">
-                You have already reviewed this product.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {!user && (
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground text-sm">
-                Please sign in to leave a review.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Reviews List */}
-        <ReviewedCard productId={product.product_id} />
+        <div className="flex w-full max-w-[200px] flex-col gap-2.5 sm:w-auto">
+          <Button
+            onClick={handleWriteReview}
+            disabled={!!userReview}
+            className="bg-foreground text-background hover:bg-foreground/90 w-full cursor-pointer"
+          >
+            Write a review
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleAskQuestion}
+            className="border-foreground text-foreground hover:bg-muted w-full cursor-pointer bg-transparent"
+          >
+            Ask a question
+          </Button>
+        </div>
       </div>
+
+      <AnimatePresence initial={false} mode="wait">
+        {activeForm === "review" && (
+          <motion.div
+            key="review-form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="border-border mb-8 border-t pt-8">
+              <h3 className="text-muted-foreground mb-6 text-center text-lg font-medium">
+                Write a review
+              </h3>
+              <div className="mx-auto max-w-md space-y-5">
+                <div className="flex flex-col items-center gap-2">
+                  <label className="text-muted-foreground text-sm">
+                    Rating
+                  </label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHoveredRating(star)}
+                        onMouseLeave={() => setHoveredRating(0)}
+                        className="cursor-pointer focus:outline-none"
+                      >
+                        <Star
+                          className={`h-7 w-7 transition-colors ${
+                            star <= (hoveredRating || rating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <label className="text-muted-foreground text-sm">
+                    Your review
+                  </label>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Share your experience with this product..."
+                    className="min-h-[120px] w-full rounded-lg"
+                    maxLength={500}
+                  />
+                  <div className="text-muted-foreground w-full text-right text-xs">
+                    {comment.length}/500
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-2.5 pt-1 sm:flex-row sm:gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setActiveForm(null);
+                      resetReviewForm();
+                    }}
+                    className="border-foreground text-foreground hover:bg-muted w-full max-w-[200px] cursor-pointer bg-transparent sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSubmitReview}
+                    disabled={!comment.trim() || rating === 0 || isSubmitting}
+                    className="bg-foreground text-background hover:bg-foreground/90 w-full max-w-[200px] cursor-pointer sm:w-auto"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Review"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeForm === "question" && (
+          <motion.div
+            key="question-form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="border-border mb-8 border-t pt-8">
+              <h3 className="text-muted-foreground mb-6 text-center text-lg font-medium">
+                Ask a question
+              </h3>
+              <div className="mx-auto max-w-md space-y-5">
+                <div className="flex flex-col items-center gap-2">
+                  <label className="text-muted-foreground text-sm">
+                    Display name
+                  </label>
+                  <Input
+                    value={questionName}
+                    onChange={(e) => setQuestionName(e.target.value)}
+                    placeholder="Display name"
+                    className="h-11 w-full rounded-lg"
+                  />
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <label className="text-muted-foreground text-sm">
+                    Email address
+                  </label>
+                  <Input
+                    type="email"
+                    value={questionEmail}
+                    onChange={(e) => setQuestionEmail(e.target.value)}
+                    placeholder="Your email address"
+                    className="h-11 w-full rounded-lg"
+                  />
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <label className="text-muted-foreground text-sm">
+                    Question
+                  </label>
+                  <Textarea
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    placeholder="Write your question here"
+                    className="min-h-[120px] w-full rounded-lg"
+                  />
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-2.5 pt-1 sm:flex-row sm:gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setActiveForm(null);
+                      resetQuestionForm();
+                    }}
+                    className="border-foreground text-foreground hover:bg-muted w-full max-w-[200px] cursor-pointer bg-transparent sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => void handleSubmitQuestion()}
+                    disabled={isSubmitting}
+                    className="bg-foreground text-background hover:bg-foreground/90 w-full max-w-[200px] cursor-pointer sm:w-auto"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Question"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {reviewCount > 0 && (
+        <div className="mt-4 space-y-4">
+          <ReviewedCard productId={product.product_id} />
+        </div>
+      )}
     </div>
   );
 }
 
-export function RenderStars(rating: number, size: "sm" | "md" = "md") {
-  const sizeClass = size === "sm" ? "w-3 h-3" : "w-4 h-4";
+export function RenderStars(rating: number, size: "sm" | "md" | "lg" = "md") {
+  const sizeClass =
+    size === "sm" ? "h-3 w-3" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
           key={star}
           className={`${sizeClass} ${
-            star <= rating
+            star <= Math.round(rating)
               ? "fill-yellow-400 text-yellow-400"
               : "text-muted-foreground"
           }`}

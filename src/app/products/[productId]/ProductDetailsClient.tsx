@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { ProductType } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import {
   ShoppingCart,
   // Heart,
@@ -21,7 +19,7 @@ import {
   Check,
 } from "lucide-react";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useStoreSettings } from "@/hooks/queries/use-store-settings";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/storeSettingsDefaults";
@@ -52,7 +50,14 @@ export default function ProductDetailsClient({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<"details" | "care" | null>(
+    null,
+  );
   // const [isFavorited, setIsFavorited] = useState(false);
+
+  const toggleAccordion = (section: "details" | "care") => {
+    setOpenAccordion((prev) => (prev === section ? null : section));
+  };
 
   const uniqueItem = product.stock <= 1;
   const alreadyInCart = cartItems.some(
@@ -259,47 +264,26 @@ export default function ProductDetailsClient({
                 </span>
               )}
               <div className="flex flex-wrap items-center gap-3">
-                {(product.show_badge ?? true) && (
-                  <Badge variant="secondary">
-                    {product.badge === "new" ? "New" : "Used"}
-                  </Badge>
-                )}
                 {soldOut ? (
                   <Badge variant="destructive">Sold Out</Badge>
-                ) : uniqueItem ? (
-                  <Badge
-                    variant="secondary"
-                    className="bg-amber-100 text-amber-900"
-                  >
-                    Unique used item — 1 available
-                  </Badge>
                 ) : (
                   <Badge
                     variant="secondary"
-                    className="bg-green-100 text-green-800"
+                    className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
                   >
-                    In Stock ({product.stock} available)
+                    In Stock - {product.stock} available
                   </Badge>
                 )}
               </div>
             </motion.div>
           </div>
 
-          <motion.p
-            className="text-muted-foreground leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            {product.description}
-          </motion.p>
-
           {/* Quantity and Add to Cart */}
           <motion.div
             className="space-y-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
           >
             <div>
               {!uniqueItem && (
@@ -367,7 +351,7 @@ export default function ProductDetailsClient({
             className="border-border grid grid-cols-1 gap-4 border-t pt-6 sm:grid-cols-3"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.5 }}
           >
             <div className="flex items-center gap-3">
               <Truck className="text-primary h-5 w-5" />
@@ -403,44 +387,111 @@ export default function ProductDetailsClient({
               </div>
             </div>
           </motion.div>
+
+          {/* Details Accordion */}
+          <motion.div
+            className="border-border border-t"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <div className="border-border border-b">
+              <button
+                type="button"
+                onClick={() => toggleAccordion("details")}
+                className="flex w-full cursor-pointer items-center justify-between py-5 text-left"
+                aria-expanded={openAccordion === "details"}
+              >
+                <span className="text-foreground text-base font-semibold">
+                  Details
+                </span>
+                <motion.span
+                  animate={{ rotate: openAccordion === "details" ? 45 : 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="inline-flex"
+                >
+                  <Plus className="text-foreground h-4 w-4 shrink-0" />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {openAccordion === "details" && (
+                  <motion.div
+                    key="details"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pb-5">
+                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                        {product.description}
+                      </p>
+                      {product.sku && (
+                        <p className="text-muted-foreground mt-3 text-sm">
+                          <span className="text-foreground font-medium">
+                            SKU:
+                          </span>{" "}
+                          {product.sku}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="border-border border-b">
+              <button
+                type="button"
+                onClick={() => toggleAccordion("care")}
+                className="flex w-full cursor-pointer items-center justify-between py-5 text-left"
+                aria-expanded={openAccordion === "care"}
+              >
+                <span className="text-foreground text-base font-semibold">
+                  Care Instructions
+                </span>
+                <motion.span
+                  animate={{ rotate: openAccordion === "care" ? 45 : 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="inline-flex"
+                >
+                  <Plus className="text-foreground h-4 w-4 shrink-0" />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {openAccordion === "care" && (
+                  <motion.div
+                    key="care"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="text-muted-foreground space-y-2 pb-5 text-sm leading-relaxed">
+                      <p>Gentle wash or dry clean when needed.</p>
+                      <p>Avoid harsh detergents and high-heat drying.</p>
+                      <p>
+                        Store flat or hung to help preserve shape and fabric.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Product Details Tabs */}
+      {/* Customer Reviews */}
       <motion.div
+        className="mx-auto mb-12 max-w-3xl"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        <Tabs defaultValue="description" className="mb-12">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="description">Description</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="description" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-muted-foreground mb-4 leading-relaxed">
-                    {product.description}
-                  </p>
-                  {product.sku && (
-                    <div className="border-border mt-4 border-t pt-4">
-                      <p className="text-muted-foreground text-sm">
-                        <strong>SKU:</strong> {product.sku}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="reviews" className="mt-6">
-            <ReviewTab product={product} />
-          </TabsContent>
-        </Tabs>
+        <ReviewTab product={product} />
       </motion.div>
     </div>
   );

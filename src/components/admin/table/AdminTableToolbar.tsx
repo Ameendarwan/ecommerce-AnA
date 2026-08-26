@@ -26,7 +26,7 @@ export function AdminTableToolbar({
         />
       </div>
       {filters ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {filters}
         </div>
       ) : null}
