@@ -9,6 +9,7 @@ import {
   User,
   RefreshCw,
   X,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -33,6 +34,16 @@ import { useAuth } from "@/context/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useCategories } from "@/hooks/queries";
 import { usePathname, useRouter } from "next/navigation";
+
+const publicInfoLinks = [
+  { name: "About us", href: "/about" },
+  { name: "Contact us", href: "/contact" },
+  { name: "Size chart", href: "/size-chart" },
+  { name: "Shipping policy", href: "/shipping-policy" },
+  { name: "Returns & exchanges", href: "/returns" },
+  { name: "Payment options", href: "/payment-options" },
+  { name: "Privacy policy", href: "/privacy" },
+] as const;
 
 function SidebarBackdrop() {
   const { open, setOpen, isMobile } = useSidebar();
@@ -65,11 +76,18 @@ function NavLink({
       href={href}
       onClick={onNavigate}
       className={cn(
-        "text-foreground hover:bg-muted/40 block border-b px-6 py-4 text-[15px] font-normal transition-colors",
+        "text-foreground hover:bg-muted/40 group flex items-center justify-between gap-3 border-b px-6 py-4 text-[15px] font-normal transition-colors",
         isActive && "bg-muted/30 font-medium",
       )}
     >
-      {label}
+      <span className="min-w-0 truncate">{label}</span>
+      <ChevronRight
+        className={cn(
+          "text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5",
+          isActive && "text-foreground",
+        )}
+        aria-hidden
+      />
     </Link>
   );
 }
@@ -215,37 +233,59 @@ export default function Sidebar() {
             </div>
           )}
 
-          {loading ? (
-            <div className="animate-pulse space-y-0 px-6 py-4">
-              {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="bg-muted mb-3 h-10 rounded" />
-              ))}
-            </div>
-          ) : categoriesError ? (
-            <div className="text-destructive space-y-2 px-6 py-4 text-sm">
-              <p>Couldn&apos;t load categories</p>
-              <button
-                type="button"
-                onClick={() => void refetchCategories()}
-                className="hover:bg-muted flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs"
-              >
-                <RefreshCw className="size-3" />
-                Retry
-              </button>
-            </div>
-          ) : (
-            <nav>
-              {categoryItems.map((category) => (
+          <div>
+            <p className="text-muted-foreground px-6 pt-4 pb-2 text-xs tracking-wide uppercase">
+              Shop
+            </p>
+            {loading ? (
+              <div className="animate-pulse space-y-0 px-6 py-2">
+                {[1, 2, 3, 4].map((n) => (
+                  <div key={n} className="bg-muted mb-3 h-10 rounded" />
+                ))}
+              </div>
+            ) : categoriesError ? (
+              <div className="text-destructive space-y-2 px-6 py-4 text-sm">
+                <p>Couldn&apos;t load categories</p>
+                <button
+                  type="button"
+                  onClick={() => void refetchCategories()}
+                  className="hover:bg-muted flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs"
+                >
+                  <RefreshCw className="size-3" />
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <nav aria-label="Shop categories">
+                {categoryItems.map((category) => (
+                  <NavLink
+                    key={category.name}
+                    href={category.href}
+                    label={category.name}
+                    isActive={pathname === category.href}
+                    onNavigate={closeMobileSidebar}
+                  />
+                ))}
+              </nav>
+            )}
+          </div>
+
+          <div>
+            <p className="text-muted-foreground px-6 pt-4 pb-2 text-xs tracking-wide uppercase">
+              Help & info
+            </p>
+            <nav aria-label="Help and information">
+              {publicInfoLinks.map((item) => (
                 <NavLink
-                  key={category.name}
-                  href={category.href}
-                  label={category.name}
-                  isActive={pathname === category.href}
+                  key={item.name}
+                  href={item.href}
+                  label={item.name}
+                  isActive={pathname === item.href}
                   onNavigate={closeMobileSidebar}
                 />
               ))}
             </nav>
-          )}
+          </div>
         </SidebarContent>
 
         <SidebarFooter className="mt-auto border-t p-0">
@@ -270,6 +310,10 @@ export default function Sidebar() {
                         {user.email}
                       </p>
                     </div>
+                    <ChevronRight
+                      className="text-muted-foreground size-4 shrink-0"
+                      aria-hidden
+                    />
                   </button>
                 }
               />
@@ -303,9 +347,13 @@ export default function Sidebar() {
             <Link
               href="/signin"
               onClick={closeMobileSidebar}
-              className="hover:bg-muted/40 block px-6 py-4 text-[15px] transition-colors"
+              className="hover:bg-muted/40 group flex items-center justify-between gap-3 px-6 py-4 text-[15px] transition-colors"
             >
-              Log in
+              <span>Log in</span>
+              <ChevronRight
+                className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5"
+                aria-hidden
+              />
             </Link>
           )}
         </SidebarFooter>
