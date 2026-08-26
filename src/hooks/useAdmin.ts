@@ -11,8 +11,8 @@ interface AdminData {
 }
 
 /**
- * Custom hook to check if the current user has admin privileges
- * Uses the admin_users view which filters profiles where role='admin'
+ * Custom hook to check if the current user has admin privileges.
+ * Strictly verifies against Supabase profiles table where role='admin'.
  */
 export function useAdmin(): AdminData {
   const { user, loading: authLoading } = useAuth();
@@ -55,23 +55,20 @@ export function useAdmin(): AdminData {
 
       try {
         const { data, error: queryError } = await supabase
-          .from("admin_users")
-          .select("profile_id")
+          .from("profiles")
+          .select("profile_id, role")
           .eq("profile_id", userId)
-          .single();
+          .eq("role", "admin")
+          .maybeSingle();
 
         if (cancelled) return;
 
         if (queryError) {
-          if (queryError.code === "PGRST116") {
-            setIsAdmin(false);
-          } else {
-            console.error("Error checking admin status:", queryError);
-            setError("Failed to verify admin status");
-            setIsAdmin(false);
-          }
+          console.error("Error verifying admin status:", queryError);
+          setError("Failed to verify admin status");
+          setIsAdmin(false);
         } else {
-          setIsAdmin(!!data);
+          setIsAdmin(Boolean(data && data.role === "admin"));
         }
         checkedUserIdRef.current = userId;
       } catch (err) {
@@ -95,28 +92,25 @@ export function useAdmin(): AdminData {
 }
 
 /**
- * Utility function to check admin status without hooks
- * Useful for server-side or one-time checks
+ * Utility function to check admin status directly with Supabase
  */
 export async function checkIsAdmin(userId: string): Promise<boolean> {
   if (!userId) return false;
 
   try {
     const { data, error } = await supabase
-      .from("admin_users")
-      .select("profile_id")
+      .from("profiles")
+      .select("profile_id, role")
       .eq("profile_id", userId)
-      .single();
+      .eq("role", "admin")
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return false;
-      }
       console.error("Error checking admin status:", error);
       return false;
     }
 
-    return !!data;
+    return Boolean(data && data.role === "admin");
   } catch (err) {
     console.error("Unexpected error checking admin status:", err);
     return false;

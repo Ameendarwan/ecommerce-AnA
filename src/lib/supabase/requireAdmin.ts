@@ -1,25 +1,40 @@
-import { createServerSupabase, getAuthenticatedUser } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
+import type { ProfileType } from "@/types";
 
-type AdminAuthResult =
-  | { ok: true; userId: string }
-  | { ok: false; status: 401 | 403 };
+export type AdminAuthResult =
+  | { ok: true; userId: string; user: User; profile: ProfileType }
+  | { ok: false; status: 401 | 403; error: string };
 
+/**
+ * Strictly verifies that the current server request is authenticated
+ * and that the caller possesses the 'admin' role in Supabase.
+ */
 export async function requireAdmin(): Promise<AdminAuthResult> {
-  const user = await getAuthenticatedUser();
-  if (!user) {
-    return { ok: false, status: 401 };
-  }
-
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase
-    .from("admin_users")
-    .select("profile_id")
-    .eq("profile_id", user.id)
-    .single();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (error || !data) {
-    return { ok: false, status: 403 };
+  if (userError || !user) {
+    return { ok: false, status: 401, error: "Unauthorized: Authentication required." };
   }
 
-  return { ok: true, userId: user.id };
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("profile_id", user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (profileError || !profile || profile.role !== "admin") {
+    return {
+      ok: false,
+      status: 403,
+      error: "Forbidden: Admin privileges required.",
+    };
+  }
+
+  return { ok: true, userId: user.id, user, profile: profile as ProfileType };
 }

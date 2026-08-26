@@ -37,6 +37,10 @@ import {
   UserFilters,
   UserWithStats,
 } from "@/services/admin/adminUserService";
+import {
+  updateUserRoleAction,
+  deleteUserAction,
+} from "./actions";
 
 const ROLE_OPTIONS = [
   { value: "all", label: "All Roles" },
@@ -97,9 +101,13 @@ export default function AdminUsersPage() {
   ) => {
     try {
       setUpdatingId(userId);
-      await adminUserService.updateUserRole(userId, role);
-      toast.success(`User role updated to ${role}`);
-      await fetchUsers();
+      const result = await updateUserRoleAction(userId, role);
+      if (result.success) {
+        toast.success(result.message);
+        await fetchUsers();
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       console.error("Error updating user role:", error);
       toast.error("Failed to update user role");
@@ -111,9 +119,13 @@ export default function AdminUsersPage() {
   const handleDeleteUser = async (userId: string) => {
     try {
       setUpdatingId(userId);
-      await adminUserService.deleteUser(userId);
-      toast.success("User deleted");
-      await fetchUsers();
+      const result = await deleteUserAction(userId);
+      if (result.success) {
+        toast.success(result.message);
+        await fetchUsers();
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error(

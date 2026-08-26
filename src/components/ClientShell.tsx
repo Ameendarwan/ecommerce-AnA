@@ -2,11 +2,13 @@
 
 import { SplashScreen } from "@/components/SplashScreen";
 import { CatalogRealtimeSync } from "@/components/CatalogRealtimeSync";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster } from "sonner";
 
 export function ClientShell() {
   return (
     <>
+      <ScrollToTop />
       <CatalogRealtimeSync />
       <SplashScreen />
       <Toaster

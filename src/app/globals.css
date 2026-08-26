@@ -180,6 +180,8 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--app-header-height, 6rem);
   }
   button:not(:disabled),
   [role="button"]:not(:disabled):not([aria-disabled="true"]) {

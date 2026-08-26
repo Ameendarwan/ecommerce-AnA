@@ -1,35 +1,48 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/services/auth/authServerService";
+import { requireAdmin } from "@/lib/supabase/requireAdmin";
 import { adminUserServerService } from "@/services/admin/adminUserServerService";
 
 /**
  * Server action to update user role
- * Only accessible by admin users
+ * Strictly accessible only by verified Supabase admin users
  */
 export async function updateUserRoleAction(
   userId: string,
   role: "admin" | "user",
 ) {
   try {
-    // Verify current user is admin
-    const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== "admin") {
-      throw new Error("Unauthorized: Admin access required");
+    const authResult = await requireAdmin();
+    if (!authResult.ok) {
+      return {
+        success: false,
+        message: authResult.error,
+      };
+    }
+
+    // Prevent an admin from demoting their own account
+    if (authResult.userId === userId && role !== "admin") {
+      return {
+        success: false,
+        message: "Cannot demote your own admin account",
+      };
     }
 
     // Update user role
     const result = await adminUserServerService.updateUserRole(userId, role);
 
     if (!result) {
-      throw new Error("Failed to update user role");
+      return {
+        success: false,
+        message: "Failed to update user role",
+      };
     }
 
     // Revalidate the admin users page to show updated data
     revalidatePath("/admin/users");
 
-    return { success: true, message: "User role updated successfully" };
+    return { success: true, message: `User role updated to ${role}` };
   } catch (error) {
     console.error("Error updating user role:", error);
     return {
@@ -42,26 +55,34 @@ export async function updateUserRoleAction(
 
 /**
  * Server action to delete user
- * Only accessible by admin users
+ * Strictly accessible only by verified Supabase admin users
  */
 export async function deleteUserAction(userId: string) {
   try {
-    // Verify current user is admin
-    const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== "admin") {
-      throw new Error("Unauthorized: Admin access required");
+    const authResult = await requireAdmin();
+    if (!authResult.ok) {
+      return {
+        success: false,
+        message: authResult.error,
+      };
     }
 
     // Prevent admin from deleting themselves
-    if (currentUser.profile_id === userId) {
-      throw new Error("Cannot delete your own account");
+    if (authResult.userId === userId) {
+      return {
+        success: false,
+        message: "Cannot delete your own account",
+      };
     }
 
     // Delete user
     const success = await adminUserServerService.deleteUser(userId);
 
     if (!success) {
-      throw new Error("Failed to delete user");
+      return {
+        success: false,
+        message: "Failed to delete user",
+      };
     }
 
     // Revalidate the admin users page to show updated data
