@@ -20,15 +20,31 @@ export default async function ReturnsPage() {
       title="Returns & Exchange Policy"
       description="We want you to love what you ordered. Here's how returns and exchanges work."
     >
+      <h2>Our policy</h2>
+      <p>
+        Returns are considered only when an item has a genuine defect or damage
+        — and the request must be made on the{" "}
+        <strong>same day you receive your order</strong>.
+      </p>
+
       <h2>Eligibility</h2>
       <ul>
         <li>
-          Items must be unused, unwashed, and in original condition with tags
-          attached (where applicable).
+          The item must have a clear defect or damage (e.g. torn fabric, broken
+          hardware, wrong item sent, or a fault not described on the product
+          page).
         </li>
         <li>
-          Please initiate a return or exchange request within{" "}
-          <strong>7 days</strong> of delivery.
+          Contact us on the <strong>same day of delivery</strong> with your
+          order ID and clear photos of the issue.
+        </li>
+        <li>
+          Items must be unused, unwashed, and in the condition received, with
+          tags attached where applicable.
+        </li>
+        <li>
+          Change-of-mind returns, size swaps after delivery, and requests made
+          after the delivery day are not accepted.
         </li>
         <li>
           Final-sale, clearance, or heavily discounted items may not be eligible
@@ -38,14 +54,15 @@ export default async function ReturnsPage() {
 
       <h2>Exchanges</h2>
       <p>
-        Need a different size or colour? Contact us with your order ID and the
-        item you&apos;d like instead. Exchanges depend on stock availability.
+        Exchanges are only considered for same-day defect or damage claims, and
+        only when we have a suitable replacement in stock. If an exchange is not
+        possible, we may offer a refund instead.
       </p>
 
       <h2>How to request a return</h2>
       <ol>
         <li>
-          Message or email us at{" "}
+          On the day your order arrives, message or email us at{" "}
           <a href={`mailto:${store.email}`}>{store.email}</a>
           {store.phone && (
             <>
@@ -58,7 +75,9 @@ export default async function ReturnsPage() {
           )}
           .
         </li>
-        <li>Share your order ID, reason for return, and photos if requested.</li>
+        <li>
+          Share your order ID, describe the defect, and send photos if requested.
+        </li>
         <li>
           Once approved, we&apos;ll guide you on pickup or drop-off and process
           your refund or exchange.
@@ -69,7 +88,7 @@ export default async function ReturnsPage() {
       <p>
         Approved refunds are typically processed after we receive and inspect the
         returned item. Shipping fees are generally non-refundable unless the
-        return is due to our error (wrong or damaged item).
+        return is due to our error (wrong or defective item).
       </p>
 
       <p>

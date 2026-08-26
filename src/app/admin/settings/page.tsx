@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { Truck, Phone, Clock, Share2 } from "lucide-react";
+import { Truck, Phone, Clock, Share2, Palette } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   adminSettingsService,
   UpdateStoreSettingsData,
@@ -28,6 +29,7 @@ export default function AdminSettingsPage() {
   const [socialYoutube, setSocialYoutube] = useState("");
   const [socialFacebook, setSocialFacebook] = useState("");
   const [socialInstagram, setSocialInstagram] = useState("");
+  const [showThemeToggle, setShowThemeToggle] = useState(true);
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function AdminSettingsPage() {
       setSocialYoutube(data.social_youtube);
       setSocialFacebook(data.social_facebook);
       setSocialInstagram(data.social_instagram);
+      setShowThemeToggle(data.show_theme_toggle ?? true);
     } catch (error) {
       console.error("Error fetching settings:", error);
       toast.error("Failed to load store settings");
@@ -80,6 +83,7 @@ export default function AdminSettingsPage() {
         social_youtube: socialYoutube.trim(),
         social_facebook: socialFacebook.trim(),
         social_instagram: socialInstagram.trim(),
+        show_theme_toggle: showThemeToggle,
       };
 
       await adminSettingsService.updateSettings(payload);
@@ -189,6 +193,32 @@ export default function AdminSettingsPage() {
               value={hours}
               onChange={(e) => setHours(e.target.value)}
               placeholder="Mon–Sat: 02:00 PM to 09:00 PM"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Palette className="h-5 w-5" />
+            Appearance
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="show-theme-toggle" className="text-base font-medium">
+                Theme toggle option
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Show or hide the light / dark mode toggle button in the navigation header
+              </p>
+            </div>
+            <Switch
+              id="show-theme-toggle"
+              checked={showThemeToggle}
+              onCheckedChange={setShowThemeToggle}
             />
           </div>
         </CardContent>

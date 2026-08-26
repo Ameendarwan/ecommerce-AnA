@@ -12,6 +12,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettingsType = {
   social_youtube: "https://www.youtube.com/@thriftonia",
   social_facebook: "https://www.facebook.com/thriftonia",
   social_instagram: "https://www.instagram.com/thriftonia",
+  show_theme_toggle: true,
 };
 
 export function mergeStoreSettings(
@@ -32,6 +33,8 @@ export function mergeStoreSettings(
       row.social_facebook ?? DEFAULT_STORE_SETTINGS.social_facebook,
     social_instagram:
       row.social_instagram ?? DEFAULT_STORE_SETTINGS.social_instagram,
+    show_theme_toggle:
+      row.show_theme_toggle ?? DEFAULT_STORE_SETTINGS.show_theme_toggle,
     updated_at: row.updated_at,
   };
 }

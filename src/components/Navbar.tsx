@@ -1,5 +1,5 @@
 "use client";
-import { ShoppingCart, Moon, Sun, User, LogIn, Menu } from "lucide-react";
+import { ShoppingCart, Moon, Sun, User, Menu } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useStoreSettings } from "@/hooks/queries/use-store-settings";
 
 export function Navbar() {
   const { totalItems } = useCart();
@@ -17,6 +18,9 @@ export function Navbar() {
   const { user } = useAuth();
   const router = useRouter();
   const { toggleSidebar } = useSidebar();
+  const { data: storeSettings } = useStoreSettings();
+
+  const showThemeToggle = storeSettings?.show_theme_toggle ?? true;
 
   // Handle mounting state
   useEffect(() => {
@@ -37,7 +41,7 @@ export function Navbar() {
 
   return (
     <nav className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 w-full border-b backdrop-blur">
-      <div className="mx-4 flex h-24 items-center">
+      <div className="mx-2 flex h-16 items-center sm:mx-4 sm:h-24">
         <div className="flex flex-1 justify-start">
           <Button
             variant="ghost"
@@ -64,41 +68,30 @@ export function Navbar() {
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {" "}
+          {showThemeToggle && (
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? (
+                <Sun className="size-5" />
+              ) : (
+                <Moon className="size-5" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon-lg"
             className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onClick={() => router.push(user ? "/profile" : "/signup")}
           >
-            {theme === "dark" ? (
-              <Sun className="size-5" />
-            ) : (
-              <Moon className="size-5" />
-            )}
-            <span className="sr-only">Toggle theme</span>
+            <User className="size-5" />
+            <span className="sr-only">{user ? "Profile" : "Sign in"}</span>
           </Button>
-          {user ? (
-            <Button
-              variant="ghost"
-              size="icon-lg"
-              className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
-              onClick={() => router.push("/profile")}
-            >
-              <User className="size-5" />
-              <span className="sr-only">{user ? "Profile" : "Sign in"}</span>
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon-lg"
-              className="hover:bg-muted/50 cursor-pointer transition-colors duration-200 [&_svg]:!size-5"
-              onClick={() => router.push("/signup")}
-            >
-              <LogIn className="size-5" />
-              <span className="sr-only">Sign in</span>
-            </Button>
-          )}
           <Link href="/cart">
             <Button
               variant="ghost"

@@ -19,6 +19,11 @@ interface ProductCardProps {
   priority?: boolean;
 }
 
+function stripHtml(html?: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>?/gm, " ").replace(/\s+/g, " ").trim();
+}
+
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart, removeFromCart, cartItems } = useCart();
   const router = useRouter();
@@ -131,7 +136,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       {/* Product Details */}
       <CardContent className="space-y-1.5 px-0 pt-3 pb-0">
         <p className="text-muted-foreground line-clamp-1 text-xs">
-          {product.description || "Pre-loved item in good condition."}
+          {stripHtml(product.description) || "Pre-loved item in good condition."}
         </p>
 
         <h3 className="text-foreground group-hover:text-primary line-clamp-1 text-sm font-semibold transition-colors duration-200">

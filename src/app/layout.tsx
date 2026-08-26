@@ -14,6 +14,7 @@ import { ClientShell } from "@/components/ClientShell";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { SITE } from "@/lib/seo";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -74,6 +75,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body className="bg-background min-h-screen">
+        <GoogleAnalytics />
         <ErrorBoundary>
           <TanStackQueryProvider>
             <AuthProvider>

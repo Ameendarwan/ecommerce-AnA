@@ -145,5 +145,6 @@ export interface StoreSettingsType {
   social_youtube: string;
   social_facebook: string;
   social_instagram: string;
+  show_theme_toggle?: boolean;
   updated_at?: string;
 }

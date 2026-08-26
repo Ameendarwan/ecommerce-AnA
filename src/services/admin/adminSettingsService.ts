@@ -12,6 +12,7 @@ export interface UpdateStoreSettingsData {
   social_youtube?: string;
   social_facebook?: string;
   social_instagram?: string;
+  show_theme_toggle?: boolean;
 }
 
 export const adminSettingsService = {
@@ -63,6 +64,9 @@ export const adminSettingsService = {
     }
     if (settingsData.social_instagram !== undefined) {
       payload.social_instagram = settingsData.social_instagram.trim();
+    }
+    if (settingsData.show_theme_toggle !== undefined) {
+      payload.show_theme_toggle = settingsData.show_theme_toggle;
     }
 
     const { data, error } = await supabase

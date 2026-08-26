@@ -60,7 +60,9 @@ export interface OrderFilters {
 
 export interface OrderAnalytics {
   totalOrders: number;
+  totalSales: number;
   totalRevenue: number;
+  deliveredOrders: number;
   averageOrderValue: number;
   ordersByStatus: Record<string, number>;
   recentOrders: OrderWithDetails[];
@@ -272,14 +274,26 @@ export const adminOrderService = {
 
       const allOrders = orders || [];
 
+      const toAmount = (value: unknown): number => {
+        const n = typeof value === "number" ? value : Number(value);
+        return Number.isFinite(n) ? n : 0;
+      };
+
       // Calculate basic metrics
       const totalOrders = allOrders.length;
-      const totalRevenue = allOrders.reduce(
-        (sum, order) => sum + order.total,
+      const totalSales = allOrders.reduce(
+        (sum, order) => sum + toAmount(order.total),
+        0,
+      );
+      const deliveredOrders = allOrders.filter(
+        (order) => order.status === "delivered",
+      );
+      const totalRevenue = deliveredOrders.reduce(
+        (sum, order) => sum + toAmount(order.total),
         0,
       );
       const averageOrderValue =
-        totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        totalOrders > 0 ? totalSales / totalOrders : 0;
 
       // Orders by status
       const ordersByStatus = allOrders.reduce(
@@ -310,7 +324,7 @@ export const adminOrderService = {
             };
           }
           acc[userId].totalOrders += 1;
-          acc[userId].totalSpent += order.total;
+          acc[userId].totalSpent += toAmount(order.total);
           return acc;
         },
         {},
@@ -322,7 +336,9 @@ export const adminOrderService = {
 
       return {
         totalOrders,
+        totalSales: Number(totalSales.toFixed(2)),
         totalRevenue: Number(totalRevenue.toFixed(2)),
+        deliveredOrders: deliveredOrders.length,
         averageOrderValue: Number(averageOrderValue.toFixed(2)),
         ordersByStatus,
         recentOrders,
@@ -332,7 +348,9 @@ export const adminOrderService = {
       console.error("Failed to get order analytics:", err);
       return {
         totalOrders: 0,
+        totalSales: 0,
         totalRevenue: 0,
+        deliveredOrders: 0,
         averageOrderValue: 0,
         ordersByStatus: {},
         recentOrders: [],

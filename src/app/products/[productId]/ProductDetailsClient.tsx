@@ -424,9 +424,18 @@ export default function ProductDetailsClient({
                     className="overflow-hidden"
                   >
                     <div className="pb-5">
-                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-                        {product.description}
-                      </p>
+                      {/<[a-z][\s\S]*>/i.test(product.description || "") ? (
+                        <div
+                          className="prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_hr]:my-3"
+                          dangerouslySetInnerHTML={{
+                            __html: product.description,
+                          }}
+                        />
+                      ) : (
+                        <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+                          {product.description}
+                        </p>
+                      )}
                       {product.sku && (
                         <p className="text-muted-foreground mt-3 text-sm">
                           <span className="text-foreground font-medium">

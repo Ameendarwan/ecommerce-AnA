@@ -18,10 +18,17 @@ export function DescriptionTab({ productId }: DescriptionTabProps) {
     return (
         <Card>
         <CardContent className="p-6">
-          <div className="prose prose-sm max-w-none">
-            <p className="text-muted-foreground mb-4 leading-relaxed">
-              {product.description}
-            </p>
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            {/<[a-z][\s\S]*>/i.test(product.description || "") ? (
+              <div
+                className="text-muted-foreground mb-4 leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_hr]:my-3"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            ) : (
+              <p className="text-muted-foreground mb-4 leading-relaxed whitespace-pre-line">
+                {product.description}
+              </p>
+            )}
             {product.sku && (
               <div className="border-border mt-4 border-t pt-4">
                 <p className="text-muted-foreground text-sm">

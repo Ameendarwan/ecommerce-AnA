@@ -6,7 +6,6 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
   Users,
@@ -16,6 +15,7 @@ import {
   AlertTriangle,
   DollarSign,
   Activity,
+  BarChart3,
   Settings,
   FolderOpen,
   CircleHelp,
@@ -35,7 +35,9 @@ interface DashboardStats {
   };
   orders: {
     total: number;
+    sales: number;
     revenue: number;
+    delivered: number;
     averageValue: number;
     pending: number;
   };
@@ -87,10 +89,12 @@ export default function AdminDashboard() {
           totalValue: productAnalytics.totalInventoryValue,
         },
         orders: {
-          total: orderAnalytics.totalOrders,
-          revenue: orderAnalytics.totalRevenue,
-          averageValue: orderAnalytics.averageOrderValue,
-          pending: orderAnalytics.ordersByStatus.pending || 0,
+          total: orderAnalytics.totalOrders ?? 0,
+          sales: orderAnalytics.totalSales ?? 0,
+          revenue: orderAnalytics.totalRevenue ?? 0,
+          delivered: orderAnalytics.deliveredOrders ?? 0,
+          averageValue: orderAnalytics.averageOrderValue ?? 0,
+          pending: orderAnalytics.ordersByStatus?.pending || 0,
         },
         users: {
           total: userAnalytics.totalUsers,
@@ -149,14 +153,25 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
           <p className="text-muted-foreground">Welcome back, {user?.email}</p>
         </div>
-        <Badge variant="secondary" className="bg-primary/15 text-primary">
-          <Settings className="mr-1 h-3 w-3" />
-          Admin
-        </Badge>
       </div>
 
       {/* Overview Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <TrendingUp className="text-muted-foreground h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.orders.sales)}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {stats.orders.total} orders (all statuses)
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -167,7 +182,7 @@ export default function AdminDashboard() {
               {formatCurrency(stats.orders.revenue)}
             </div>
             <p className="text-muted-foreground text-xs">
-              {stats.orders.total} total orders
+              {stats.orders.delivered} delivered orders
             </p>
           </CardContent>
         </Card>
@@ -221,6 +236,12 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Link href="/admin/analytics">
+              <Button className="w-full cursor-pointer" variant="outline">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                View Analytics
+              </Button>
+            </Link>
             <Link href="/admin/products">
               <Button className="w-full cursor-pointer" variant="outline">
                 <Package className="mr-2 h-4 w-4" />

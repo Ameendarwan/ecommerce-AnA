@@ -30,6 +30,7 @@ import { uploadProductImages } from "@/lib/uploadProductImages";
 import { toast } from "sonner";
 import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -151,8 +152,11 @@ export function ProductFormModal({
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) newErrors.title = "Title is required";
-    if (!formData.description.trim())
-      newErrors.description = "Description is required";
+    const cleanDesc = formData.description
+      .replace(/<[^>]*>?/gm, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+    if (!cleanDesc) newErrors.description = "Description is required";
 
     if (!formData.price.trim()) {
       newErrors.price = "Price is required";
@@ -289,24 +293,24 @@ export function ProductFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl md:max-w-4xl lg:max-w-5xl w-full p-6">
         <DialogHeader className="space-y-1 text-left">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             {product
-              ? "Update this used item listing"
-              : "Add a used item (usually stock 1)"}
+              ? "Update this product listing and details"
+              : "Add a product listing (usually stock 1)"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="e.g. Used denim shirt — Medium"
+              placeholder="e.g. Vintage Denim Jacket — Medium"
             />
             {errors.title && (
               <p className="text-destructive text-sm">{errors.title}</p>
@@ -315,22 +319,18 @@ export function ProductFormModal({
 
           <div className="space-y-1.5">
             <Label htmlFor="description">Description *</Label>
-            <textarea
-              id="description"
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) =>
-                handleInputChange("description", e.target.value)
-              }
-              placeholder="Condition, size, wear notes…"
-              rows={3}
-              className="border-input bg-background placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:outline-none focus-visible:ring-0"
+              onChange={(val) => handleInputChange("description", val)}
+              placeholder="Condition, fabric, measurements, wear notes, specifications..."
+              minHeight="180px"
             />
             {errors.description && (
               <p className="text-destructive text-sm">{errors.description}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="price">Price (PKR) *</Label>
               <Input
@@ -367,7 +367,7 @@ export function ProductFormModal({
                 </p>
               )}
               <p className="text-muted-foreground text-xs">
-                Shows strikethrough price and “X% OFF” on the storefront
+                Shows strikethrough and “X% OFF”
               </p>
             </div>
 
@@ -387,7 +387,7 @@ export function ProductFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="stock">Stock *</Label>
               <Input
@@ -412,57 +412,57 @@ export function ProductFormModal({
                 placeholder="Optional"
               />
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="category">Category</Label>
-            {categoriesError && (
-              <div className="border-destructive/30 bg-destructive/10 mb-1 space-y-2 rounded-md border p-2 text-sm">
-                <p className="text-destructive">{categoriesError}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void fetchCategories()}
-                >
-                  Retry
-                </Button>
-              </div>
-            )}
-            <Select
-              value={formData.category_id}
-              onValueChange={(value) =>
-                handleInputChange("category_id", value ?? "no-category")
-              }
-              disabled={categoriesLoading || !!categoriesError}
-              modal={false}
-              items={[
-                { label: "No category", value: "no-category" },
-                ...categories.map((category) => ({
-                  value: category.id.toString(),
-                  label:
-                    category.is_visible === false
-                      ? `${category.name} (hidden)`
-                      : category.name,
-                })),
-              ]}
-            >
-              <SelectTrigger id="category" className="w-full">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false}>
-                <SelectItem value="no-category">No category</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem
-                    key={category.id}
-                    value={category.id.toString()}
+            <div className="space-y-1.5">
+              <Label htmlFor="category">Category</Label>
+              {categoriesError && (
+                <div className="border-destructive/30 bg-destructive/10 mb-1 space-y-2 rounded-md border p-2 text-sm">
+                  <p className="text-destructive">{categoriesError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void fetchCategories()}
                   >
-                    {category.name}
-                    {category.is_visible === false ? " (hidden)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    Retry
+                  </Button>
+                </div>
+              )}
+              <Select
+                value={formData.category_id}
+                onValueChange={(value) =>
+                  handleInputChange("category_id", value ?? "no-category")
+                }
+                disabled={categoriesLoading || !!categoriesError}
+                modal={false}
+                items={[
+                  { label: "No category", value: "no-category" },
+                  ...categories.map((category) => ({
+                    value: category.id.toString(),
+                    label:
+                      category.is_visible === false
+                        ? `${category.name} (hidden)`
+                        : category.name,
+                  })),
+                ]}
+              >
+                <SelectTrigger id="category" className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  <SelectItem value="no-category">No category</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
+                      {category.name}
+                      {category.is_visible === false ? " (hidden)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-3 rounded-md border p-3">
