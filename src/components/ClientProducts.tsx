@@ -1,12 +1,12 @@
 "use client";
 
-import { ProductCard } from "@/components/ProductCard";
+import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import { useProducts, FilterOptions } from "@/hooks/queries";
 import { ProductType } from "@/types";
 import { ErrorState } from "@/components/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BrandLoader } from "@/components/BrandLoader";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 // Helper functions (moved from hook to component for simplicity)
 const sortProducts = (
@@ -68,6 +68,10 @@ export default function ClientProducts({
   });
   // searchTerm / filters kept so re-enabling search UI is a comment flip
 
+  const BATCH_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const observerTarget = useRef<HTMLDivElement | null>(null);
+
   // Process products with search, filters, and sorting
   //useMemo is used to memoize the function
   const processedProducts = useMemo(() => {
@@ -95,6 +99,35 @@ export default function ClientProducts({
 
     return processed;
   }, [products, searchTerm, filters]);
+
+  // Reset pagination on filter or search changes
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE);
+  }, [searchTerm, filters]);
+
+  // Infinite scroll trigger with large margin for seamless preload before viewport bottom
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + BATCH_SIZE, processedProducts.length),
+          );
+        }
+      },
+      { rootMargin: "500px" },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [processedProducts.length, visibleCount]);
+
+  const visibleProducts = useMemo(() => {
+    return processedProducts.slice(0, visibleCount);
+  }, [processedProducts, visibleCount]);
 
   return (
     <ErrorBoundary>
@@ -202,15 +235,30 @@ export default function ClientProducts({
               )}
             </>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {processedProducts.map((product, index) => (
-                <ProductCard
-                  key={product.product_id}
-                  product={product}
-                  priority={index === 0}
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {visibleProducts.map((product, index) => (
+                  <ProductCard
+                    key={product.product_id}
+                    product={product}
+                    priority={index < 4}
+                  />
+                ))}
+
+                {visibleCount < processedProducts.length &&
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <ProductCardSkeleton key={`skeleton-${i}`} />
+                  ))}
+              </div>
+
+              {visibleCount < processedProducts.length && (
+                <div
+                  ref={observerTarget}
+                  className="h-16 w-full"
+                  aria-hidden="true"
                 />
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </>

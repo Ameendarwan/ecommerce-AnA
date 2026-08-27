@@ -120,12 +120,30 @@ export default function ProductDetailsClient({
         <div className="space-y-4">
           <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
             <div className="relative h-full w-full">
-              {productImages[selectedImageIndex] ? (
+              {productImages.length > 0 && productImages[0] !== "/placeholder-product.jpg" ? (
+                productImages.map((src, index) => (
+                  <Image
+                    key={`${src}-${index}`}
+                    src={src}
+                    alt={product.title}
+                    fill
+                    priority={index <= 1}
+                    loading="eager"
+                    quality={75}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className={`object-contain transition-opacity duration-150 ${
+                      selectedImageIndex === index
+                        ? "opacity-100 z-10"
+                        : "opacity-0 pointer-events-none z-0"
+                    }`}
+                  />
+                ))
+              ) : productImages[0] ? (
                 <Image
-                  src={productImages[selectedImageIndex]}
+                  src={productImages[0]}
                   alt={product.title}
                   fill
-                  priority={selectedImageIndex === 0}
+                  priority
                   quality={75}
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-contain"
@@ -185,11 +203,11 @@ export default function ProductDetailsClient({
               </div>
               */}
 
-            {product.show_sale_tag && (
+            {/* {product.show_sale_tag && (
               <div className="absolute top-0 right-0 z-20 bg-black px-2.5 py-1 text-[11px] leading-none font-medium text-white">
                 Sale
               </div>
-            )}
+            )} */}
           </div>
 
           {productImages.length > 1 && (
@@ -211,7 +229,7 @@ export default function ProductDetailsClient({
                     alt={`${product.title} ${index + 1}`}
                     width={100}
                     height={100}
-                    loading="lazy"
+                    loading="eager"
                     sizes="96px"
                     className="h-full w-full object-cover"
                   />
@@ -426,7 +444,7 @@ export default function ProductDetailsClient({
                     <div className="pb-5">
                       {/<[a-z][\s\S]*>/i.test(product.description || "") ? (
                         <div
-                          className="prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_hr]:my-3"
+                          className="prose prose-sm dark:prose-invert text-muted-foreground [&_a]:text-primary [&_blockquote]:border-primary/40 max-w-none text-sm leading-relaxed [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic [&_hr]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
                           dangerouslySetInnerHTML={{
                             __html: product.description,
                           }}

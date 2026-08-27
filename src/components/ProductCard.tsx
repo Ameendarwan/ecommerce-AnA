@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductType } from "@/types";
@@ -21,12 +22,32 @@ interface ProductCardProps {
 
 function stripHtml(html?: string): string {
   if (!html) return "";
-  return html.replace(/<[^>]*>?/gm, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<[^>]*>?/gm, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function ProductCardSkeleton() {
+  return (
+    <div className="gap-0 overflow-hidden rounded-none border-0 bg-transparent py-0">
+      <div className="bg-muted/70 relative aspect-[3/4] w-full animate-pulse overflow-hidden rounded-none" />
+      <div className="space-y-2 px-0 pt-3 pb-0">
+        <div className="bg-muted/50 h-3 w-1/2 animate-pulse rounded" />
+        <div className="bg-muted/70 h-4 w-4/5 animate-pulse rounded" />
+        <div className="min-h-[3.25rem] space-y-2">
+          <div className="bg-muted/70 h-5 w-1/3 animate-pulse rounded" />
+          <div className="bg-muted/40 h-4 w-1/4 animate-pulse rounded" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart, removeFromCart, cartItems } = useCart();
   const router = useRouter();
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const soldOut = product.stock <= 0;
   const inCart = cartItems.some(
@@ -61,9 +82,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       onClick={handleProductClick}
     >
       {/* Image Container */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-none">
+      <div className="bg-muted/50 relative aspect-[3/4] overflow-hidden rounded-none">
         {primaryImage ? (
           <>
+            {!isImageLoaded && (
+              <div className="bg-muted/70 absolute inset-0 animate-pulse" />
+            )}
             <Image
               src={primaryImage}
               alt={product.title}
@@ -72,10 +96,13 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
               priority={priority}
               quality={75}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className={`h-full w-full object-cover transition-all duration-700 ease-out ${
+              onLoad={() => setIsImageLoaded(true)}
+              className={`h-full w-full object-cover transition-all duration-500 ease-out ${
+                isImageLoaded ? "opacity-100" : "opacity-0"
+              } ${
                 hoverImage
                   ? "opacity-100 group-hover:opacity-0"
-                  : "scale-100 group-hover:scale-110"
+                  : "scale-100 group-hover:scale-105"
               }`}
               loading={priority ? undefined : "lazy"}
             />
@@ -86,7 +113,9 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
                 alt={`${product.title} alternate view`}
                 width={400}
                 height={533}
-                className="absolute inset-0 h-full w-full scale-100 object-cover opacity-0 transition-all duration-700 ease-out group-hover:scale-110 group-hover:opacity-100"
+                quality={75}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="absolute inset-0 h-full w-full scale-100 object-cover opacity-0 transition-all duration-500 ease-out group-hover:scale-105 group-hover:opacity-100"
                 loading="lazy"
               />
             )}
@@ -102,17 +131,9 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           </div>
         )}
 
-        {product.show_sale_tag && (
+        {/* {product.show_sale_tag && (
           <div className="absolute top-0 right-0 z-20 bg-black px-2.5 py-1 text-[11px] leading-none font-medium text-white">
             Sale
-          </div>
-        )}
-
-        {/* {product.stock > 1 && product.stock <= 5 && (
-          <div className="absolute top-2 left-2 z-20">
-            <div className="bg-accent text-accent-foreground rounded-md px-2 py-1 text-xs font-medium">
-              {product.stock} left
-            </div>
           </div>
         )} */}
 
@@ -136,7 +157,8 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       {/* Product Details */}
       <CardContent className="space-y-1.5 px-0 pt-3 pb-0">
         <p className="text-muted-foreground line-clamp-1 text-xs">
-          {stripHtml(product.description) || "Pre-loved item in good condition."}
+          {stripHtml(product.description) ||
+            "Pre-loved item in good condition."}
         </p>
 
         <h3 className="text-foreground group-hover:text-primary line-clamp-1 text-sm font-semibold transition-colors duration-200">
@@ -161,7 +183,9 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
               </span>
             )}
             {(product.show_badge ?? true) && (
-              <Badge variant="tag">{conditionLabel}</Badge>
+              <Badge variant={conditionLabel === "Used" ? "tertiary" : "tag"}>
+                {conditionLabel}
+              </Badge>
             )}
           </div>
         </div>

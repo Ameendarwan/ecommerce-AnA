@@ -146,7 +146,7 @@ export function useSupabaseAuth() {
         await ensureUserProfile(data.user);
       }
 
-      toast.success('Signed up successfully');
+      toast.success('A verification email has been sent to your email.');
     } catch (error) {
       toast.error('Failed to sign up');
       console.error(error);

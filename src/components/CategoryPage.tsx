@@ -94,7 +94,7 @@ export default function CategoryPage({
 								<ProductCard
 									key={product.product_id}
 									product={product}
-									priority={index === 0}
+									priority={index < 4}
 								/>
 							))}
 						</div>

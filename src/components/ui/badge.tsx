@@ -19,7 +19,9 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
-        tag: "inline-flex h-auto border-0 rounded-full bg-foreground px-3 py-1 text-[11px] leading-[normal] font-bold text-background hover:bg-foreground",
+        tag: "inline-flex h-[23.5px] border-0 rounded-full bg-foreground px-3 py-1 text-[11px] leading-[normal] font-bold text-background hover:bg-foreground",
+        tertiary:
+          "inline-flex h-[23.5px] border-0 rounded-full bg-yellow-100 px-3 py-1 text-[11px] leading-[normal] font-bold text-yellow-800 hover:bg-yellow-100",
       },
     },
     defaultVariants: {

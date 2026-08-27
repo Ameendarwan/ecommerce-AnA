@@ -26,7 +26,14 @@ export function LcpImagePreload({
 
   return (
     // eslint-disable-next-line @next/next/no-head-element
-    <link rel="preload" as="image" href={props.src} />
+    <link
+      rel="preload"
+      as="image"
+      href={props.src}
+      imageSrcSet={props.srcSet}
+      imageSizes={props.sizes}
+      fetchPriority="high"
+    />
   );
 }
 
