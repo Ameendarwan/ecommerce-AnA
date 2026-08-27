@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import { ProductType } from '../../types';
 import { isNoRowsError, toUserFacingQueryError } from '@/utils/errorHandling';
+import { normalizeProductId, isValidUuid } from '@/lib/utils';
 
 export const productService = {
   async getProducts(): Promise<ProductType[]> {
@@ -25,12 +26,17 @@ export const productService = {
 
   async getProductById(id: string): Promise<ProductType | null> {
     try {
+      const cleanId = normalizeProductId(id);
+      if (!cleanId || !isValidUuid(cleanId)) {
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('products')
         .select('*, category:categories(*)')
-        .eq('product_id', id)
+        .eq('product_id', cleanId)
         .eq('is_visible', true)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (isNoRowsError(error)) {
@@ -39,7 +45,7 @@ export const productService = {
         throw toUserFacingQueryError('Product', error);
       }
 
-      return data as ProductType;
+      return data as ProductType | null;
     } catch (error) {
       throw error instanceof Error
         ? error

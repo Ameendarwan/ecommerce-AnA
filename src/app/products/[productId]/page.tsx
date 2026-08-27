@@ -10,6 +10,7 @@ import {
   SITE,
 } from "@/lib/seo";
 import { LcpImagePreload } from "@/components/LcpImagePreload";
+import { normalizeProductId } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -18,11 +19,13 @@ interface ProductDetailsPageProps {
 }
 
 /** Dedupes fetch between generateMetadata + page (React cache). */
-const getProduct = cache((id: string) =>
-  productServerService.getProductById(id),
-);
+const getProduct = cache((id: string) => {
+  const cleanId = normalizeProductId(id);
+  if (!cleanId) return Promise.resolve(null);
+  return productServerService.getProductById(cleanId);
+});
 
-function getProductImage(product: ProductType) {
+function getProductImage(product: ProductType): string {
   return product.images?.[0] || product.image || SITE.ogImage;
 }
 
@@ -35,7 +38,7 @@ export async function generateMetadata({ params }: ProductDetailsPageProps) {
   }
 
   const image = getProductImage(product);
-  const isExternal = image.startsWith("http");
+  const isExternal = typeof image === "string" && (image.startsWith("http://") || image.startsWith("https://"));
 
   return pageMetadata({
     title: product.title,
@@ -44,7 +47,6 @@ export async function generateMetadata({ params }: ProductDetailsPageProps) {
       `Shop ${product.title} at Thriftonia — style for less, quality for more.`,
     path: `/products/${product.product_id}`,
     image,
-    // Product photos are typically square; avoid wrong 1200×630 hints for crawlers.
     imageWidth: isExternal ? 1200 : undefined,
     imageHeight: isExternal ? 1200 : undefined,
   });
@@ -56,7 +58,9 @@ export default async function ProductDetailsPage({
   const { productId } = await params;
   const product = await getProduct(productId);
 
-  if (!product) notFound();
+  if (!product) {
+    notFound();
+  }
 
   const image = getProductImage(product);
   const path = `/products/${product.product_id}`;
@@ -74,12 +78,12 @@ export default async function ProductDetailsPage({
           "@context": "https://schema.org",
           "@type": "Product",
           name: product.title,
-          description: product.description,
+          description: product.description || undefined,
           image: [image],
           brand: { "@type": "Brand", name: SITE.name },
           offers: {
             "@type": "Offer",
-            price: product.price,
+            price: Number(product.price) || 0,
             priceCurrency: "PKR",
             availability:
               product.stock > 0
