@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase/client";
 import { ReviewType } from "@/types";
 
-export interface ReviewWithDetails extends ReviewType {
+export interface ReviewWithDetails extends Omit<ReviewType, "profile"> {
   profile?: {
     username?: string;
     email?: string;
