@@ -160,18 +160,20 @@ export default function ProductDetailsClient({
             {productImages.length > 1 && (
               <>
                 <Button
+                  type="button"
                   variant="outline"
                   size="icon"
-                  className="bg-background/80 absolute top-1/2 left-4 -translate-y-1/2 backdrop-blur-sm"
+                  className="bg-background/80 absolute top-1/2 left-4 z-20 -translate-y-1/2 cursor-pointer backdrop-blur-sm"
                   onClick={prevImage}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
 
                 <Button
+                  type="button"
                   variant="outline"
                   size="icon"
-                  className="bg-background/80 absolute top-1/2 right-4 -translate-y-1/2 backdrop-blur-sm"
+                  className="bg-background/80 absolute top-1/2 right-4 z-20 -translate-y-1/2 cursor-pointer backdrop-blur-sm"
                   onClick={nextImage}
                 >
                   <ChevronRight className="h-4 w-4" />
