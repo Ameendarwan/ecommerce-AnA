@@ -111,6 +111,7 @@ export interface ReviewType {
   rating: number;
   comment?: string;
   created_at?: string;
+  profile?: ProfileType | null;
 }
 
 export type QuestionStatus = "pending" | "answered" | "archived";

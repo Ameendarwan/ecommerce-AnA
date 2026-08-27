@@ -5,7 +5,6 @@ import { useGetProductReviews } from "@/hooks/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Star } from "lucide-react";
-import { useCurrentProfile } from "@/hooks/queries/use-profile";
 
 type ReviewedCardProps = {
   productId: string;
@@ -16,17 +15,7 @@ export function ReviewedCard({ productId, limit }: ReviewedCardProps) {
   const {
     data: reviewsData,
     isLoading: reviewsLoading,
-    error: reviewsError,
   } = useGetProductReviews(productId);
-
-  const { data: profileData } = useCurrentProfile();
-
-  console.log(
-    "reviewsError",
-    reviewsError?.message,
-    reviewsError?.name,
-    reviewsError?.stack,
-  );
 
   if (reviewsLoading) {
     return (
@@ -41,46 +30,53 @@ export function ReviewedCard({ productId, limit }: ReviewedCardProps) {
     );
   }
 
-  if (reviewsData?.length === 0) {
+  if (!reviewsData || reviewsData.length === 0) {
     return null;
   }
 
+  const reviewsToDisplay = limit ? reviewsData.slice(0, limit) : reviewsData;
+
   return (
     <div className="space-y-4">
-      {reviewsData?.map((review) => (
-        <Card key={review.id}>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <Avatar>
-                <div className="bg-primary/10 flex h-full w-full items-center justify-center">
-                  <span className="text-sm font-medium">
-                    {profileData?.avatar_url?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              </Avatar>
-              <div className="flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <h4 className="font-medium">{profileData?.username}</h4>
-                  {RenderStars(review.rating, "sm")}
-                  {review.created_at && (
-                    <span className="text-muted-foreground text-sm">
-                      {format(new Date(review.created_at), "MMM dd, yyyy")}
+      {reviewsToDisplay.map((review) => {
+        const reviewerName = review.profile?.username || "Verified Customer";
+        const initial = reviewerName.charAt(0).toUpperCase() || "C";
+
+        return (
+          <Card key={review.id}>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <Avatar>
+                  <div className="bg-primary/10 flex h-full w-full items-center justify-center">
+                    <span className="text-sm font-medium">
+                      {initial}
                     </span>
+                  </div>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <h4 className="font-medium">{reviewerName}</h4>
+                    {RenderStars(review.rating, "sm")}
+                    {review.created_at && (
+                      <span className="text-muted-foreground text-sm">
+                        {format(new Date(review.created_at), "MMM dd, yyyy")}
+                      </span>
+                    )}
+                  </div>
+                  {review.comment && (
+                    <p className="text-muted-foreground">{review.comment}</p>
                   )}
                 </div>
-                {review.comment && (
-                  <p className="text-muted-foreground">{review.comment}</p>
-                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-      {limit && reviewsData?.length && reviewsData?.length > limit && (
+            </CardContent>
+          </Card>
+        );
+      })}
+      {limit && reviewsData.length > limit && (
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground text-sm">
-              Showing {limit} of {reviewsData?.length || 0} reviews
+              Showing {limit} of {reviewsData.length} reviews
             </p>
           </CardContent>
         </Card>
