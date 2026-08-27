@@ -20,6 +20,8 @@ import {
   FolderOpen,
   CircleHelp,
   MessageSquare,
+  FileText,
+  HelpCircle,
 } from "lucide-react";
 import { adminProductService } from "@/services/admin/adminProductService";
 import { adminOrderService } from "@/services/admin/adminOrderService";
@@ -276,6 +278,18 @@ export default function AdminDashboard() {
               <Button className="w-full cursor-pointer" variant="outline">
                 <CircleHelp className="mr-2 h-4 w-4" />
                 Manage Questions
+              </Button>
+            </Link>
+            <Link href="/admin/pages">
+              <Button className="w-full cursor-pointer" variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                Manage Pages
+              </Button>
+            </Link>
+            <Link href="/admin/faqs">
+              <Button className="w-full cursor-pointer" variant="outline">
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Manage FAQs
               </Button>
             </Link>
             <Link href="/admin/settings">

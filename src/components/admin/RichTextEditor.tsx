@@ -1,18 +1,12 @@
 "use client";
 
-import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  FC,
-  MouseEvent,
-} from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import {
   Bold,
   Italic,
   Underline,
   Strikethrough,
+  Heading1,
   Heading2,
   Heading3,
   List,
@@ -20,46 +14,49 @@ import {
   Quote,
   Link as LinkIcon,
   Unlink,
-  Minus,
-  RotateCcw,
-  RotateCw,
-  RemoveFormatting,
+  Undo,
+  Redo,
   Code,
+  Minus,
+  RemoveFormatting,
   Eye,
-  Pilcrow,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
   minHeight?: string;
 }
 
-export const RichTextEditor: FC<RichTextEditorProps> = ({
+export function RichTextEditor({
   value,
   onChange,
-  placeholder = "Write product description...",
+  placeholder = "Write content here...",
   className,
-  minHeight = "160px",
-}) => {
+  minHeight = "min-h-[300px]",
+}: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
-  const [isSourceMode, setIsSourceMode] = useState(false);
+  const isInternalChangeRef = useRef(false);
+  const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({});
 
-  // Sync value into contentEditable when value prop changes from outside (e.g. initial load or reset)
+  // Sync external value with editor content
   useEffect(() => {
-    if (editorRef.current && !isSourceMode) {
-      if (editorRef.current.innerHTML !== (value || "")) {
-        editorRef.current.innerHTML = value || "";
-      }
+    if (isInternalChangeRef.current) {
+      isInternalChangeRef.current = false;
+      return;
     }
-  }, [value, isSourceMode]);
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value || "";
+    }
+  }, [value]);
 
   const updateActiveFormats = useCallback(() => {
-    if (typeof document === "undefined" || isSourceMode) return;
+    if (typeof window === "undefined" || isHtmlMode) return;
     try {
       setActiveFormats({
         bold: document.queryCommandState("bold"),
@@ -72,204 +69,286 @@ export const RichTextEditor: FC<RichTextEditorProps> = ({
     } catch {
       // ignore
     }
-  }, [isSourceMode]);
+  }, [isHtmlMode]);
 
   const handleInput = () => {
-    if (editorRef.current) {
-      const html = editorRef.current.innerHTML;
-      // If editor contains only empty paragraph or break, treat as empty
-      const clean =
-        html === "<p><br></p>" || html === "<br>" || html.trim() === ""
-          ? ""
-          : html;
-      onChange(clean);
-      updateActiveFormats();
-    }
+    if (!editorRef.current) return;
+    isInternalChangeRef.current = true;
+    const html = editorRef.current.innerHTML;
+    onChange(html);
+    updateActiveFormats();
   };
 
-  const executeCommand = (
-    command: string,
-    val: string | undefined = undefined,
-    e?: MouseEvent,
-  ) => {
-    if (e) e.preventDefault();
-    if (isSourceMode) return;
-
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
-
-    if (command === "createLink") {
-      const url = window.prompt("Enter URL:", "https://");
-      if (url && url !== "https://") {
-        document.execCommand(command, false, url);
-      }
-    } else if (command === "formatBlock") {
-      document.execCommand(command, false, `<${val}>`);
-    } else {
-      document.execCommand(command, false, val);
-    }
-
+  const execCmd = (command: string, arg?: string) => {
+    if (isHtmlMode || !editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(command, false, arg);
     handleInput();
+  };
+
+  const setHeading = (tag: string) => {
+    if (isHtmlMode || !editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand("formatBlock", false, `<${tag}>`);
+    handleInput();
+  };
+
+  const handleAddLink = () => {
+    if (isHtmlMode || !editorRef.current) return;
+    const url = prompt("Enter URL (e.g. https://... or /path):");
+    if (url) {
+      execCmd("createLink", url);
+    }
   };
 
   return (
     <div
       className={cn(
-        "border-input bg-background overflow-hidden rounded-md border text-sm shadow-xs focus-within:ring-1 focus-within:ring-ring focus-within:border-ring transition-colors",
+        "border-input focus-within:border-ring bg-background flex flex-col rounded-lg border text-sm transition-colors",
         className,
       )}
     >
       {/* Toolbar */}
-      <div className="bg-muted/40 border-border flex flex-wrap items-center gap-0.5 border-b p-1.5">
-        <ToolbarButton
-          icon={<Bold className="size-3.5" />}
-          label="Bold"
-          active={activeFormats.bold}
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("bold", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<Italic className="size-3.5" />}
-          label="Italic"
-          active={activeFormats.italic}
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("italic", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<Underline className="size-3.5" />}
-          label="Underline"
-          active={activeFormats.underline}
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("underline", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<Strikethrough className="size-3.5" />}
-          label="Strikethrough"
-          active={activeFormats.strikeThrough}
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("strikeThrough", undefined, e)}
-        />
+      <div className="border-border bg-muted/40 flex flex-wrap items-center gap-1 border-b p-1.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => execCmd("undo")}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => execCmd("redo")}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Redo (Ctrl+Y)"
+        >
+          <Redo className="size-4" />
+        </Button>
 
-        <div className="bg-border mx-1 h-4 w-px" />
+        <div className="bg-border mx-1 h-5 w-px" />
 
-        <ToolbarButton
-          icon={<Pilcrow className="size-3.5" />}
-          label="Paragraph"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("formatBlock", "p", e)}
-        />
-        <ToolbarButton
-          icon={<Heading2 className="size-3.5" />}
-          label="Heading 2"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("formatBlock", "h2", e)}
-        />
-        <ToolbarButton
-          icon={<Heading3 className="size-3.5" />}
-          label="Heading 3"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("formatBlock", "h3", e)}
-        />
+        <Button
+          type="button"
+          variant={activeFormats.bold ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => execCmd("bold")}
+          disabled={isHtmlMode}
+          className={cn("h-8 w-8 p-0", activeFormats.bold && "bg-muted font-bold")}
+          title="Bold (Ctrl+B)"
+        >
+          <Bold className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant={activeFormats.italic ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => execCmd("italic")}
+          disabled={isHtmlMode}
+          className={cn("h-8 w-8 p-0", activeFormats.italic && "bg-muted")}
+          title="Italic (Ctrl+I)"
+        >
+          <Italic className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant={activeFormats.underline ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => execCmd("underline")}
+          disabled={isHtmlMode}
+          className={cn("h-8 w-8 p-0", activeFormats.underline && "bg-muted")}
+          title="Underline (Ctrl+U)"
+        >
+          <Underline className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant={activeFormats.strikeThrough ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => execCmd("strikeThrough")}
+          disabled={isHtmlMode}
+          className={cn("h-8 w-8 p-0", activeFormats.strikeThrough && "bg-muted")}
+          title="Strikethrough"
+        >
+          <Strikethrough className="size-4" />
+        </Button>
 
-        <div className="bg-border mx-1 h-4 w-px" />
+        <div className="bg-border mx-1 h-5 w-px" />
 
-        <ToolbarButton
-          icon={<List className="size-3.5" />}
-          label="Bullet List"
-          active={activeFormats.insertUnorderedList}
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("insertUnorderedList", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<ListOrdered className="size-3.5" />}
-          label="Numbered List"
-          active={activeFormats.insertOrderedList}
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("insertOrderedList", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<Quote className="size-3.5" />}
-          label="Quote"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("formatBlock", "blockquote", e)}
-        />
-        <ToolbarButton
-          icon={<Minus className="size-3.5" />}
-          label="Horizontal Line"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("insertHorizontalRule", undefined, e)}
-        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHeading("h2")}
+          disabled={isHtmlMode}
+          className="h-8 px-2 text-xs font-semibold"
+          title="Heading 2"
+        >
+          <Heading1 className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHeading("h3")}
+          disabled={isHtmlMode}
+          className="h-8 px-2 text-xs font-semibold"
+          title="Heading 3"
+        >
+          <Heading2 className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHeading("h4")}
+          disabled={isHtmlMode}
+          className="h-8 px-2 text-xs font-semibold"
+          title="Heading 4"
+        >
+          <Heading3 className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHeading("p")}
+          disabled={isHtmlMode}
+          className="h-8 px-2 text-xs font-normal"
+          title="Paragraph"
+        >
+          Normal
+        </Button>
 
-        <div className="bg-border mx-1 h-4 w-px" />
+        <div className="bg-border mx-1 h-5 w-px" />
 
-        <ToolbarButton
-          icon={<LinkIcon className="size-3.5" />}
-          label="Add Link"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("createLink", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<Unlink className="size-3.5" />}
-          label="Remove Link"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("unlink", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<RemoveFormatting className="size-3.5" />}
-          label="Clear Formatting"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("removeFormat", undefined, e)}
-        />
+        <Button
+          type="button"
+          variant={activeFormats.insertUnorderedList ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => execCmd("insertUnorderedList")}
+          disabled={isHtmlMode}
+          className={cn("h-8 w-8 p-0", activeFormats.insertUnorderedList && "bg-muted")}
+          title="Bulleted List"
+        >
+          <List className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant={activeFormats.insertOrderedList ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => execCmd("insertOrderedList")}
+          disabled={isHtmlMode}
+          className={cn("h-8 w-8 p-0", activeFormats.insertOrderedList && "bg-muted")}
+          title="Numbered List"
+        >
+          <ListOrdered className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHeading("blockquote")}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Quote"
+        >
+          <Quote className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => execCmd("insertHorizontalRule")}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Horizontal Line"
+        >
+          <Minus className="size-4" />
+        </Button>
 
-        <div className="bg-border mx-1 h-4 w-px" />
+        <div className="bg-border mx-1 h-5 w-px" />
 
-        <ToolbarButton
-          icon={<RotateCcw className="size-3.5" />}
-          label="Undo"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("undo", undefined, e)}
-        />
-        <ToolbarButton
-          icon={<RotateCw className="size-3.5" />}
-          label="Redo"
-          disabled={isSourceMode}
-          onClick={(e) => executeCommand("redo", undefined, e)}
-        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleAddLink}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Insert Link"
+        >
+          <LinkIcon className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => execCmd("unlink")}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Remove Link"
+        >
+          <Unlink className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => execCmd("removeFormat")}
+          disabled={isHtmlMode}
+          className="h-8 w-8 p-0"
+          title="Clear Formatting"
+        >
+          <RemoveFormatting className="size-4" />
+        </Button>
 
-        <div className="ml-auto flex items-center">
-          <button
+        <div className="ml-auto flex items-center gap-1">
+          <Button
             type="button"
-            onClick={() => setIsSourceMode(!isSourceMode)}
-            className={cn(
-              "text-muted-foreground hover:text-foreground hover:bg-background/80 inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors cursor-pointer",
-              isSourceMode && "bg-background text-foreground shadow-2xs font-semibold",
-            )}
-            title={isSourceMode ? "Switch to Visual Editor" : "Switch to HTML Source"}
+            variant={isHtmlMode ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => {
+              if (isHtmlMode && editorRef.current) {
+                editorRef.current.innerHTML = value || "";
+              }
+              setIsHtmlMode(!isHtmlMode);
+            }}
+            className="h-8 gap-1.5 px-2.5 text-xs font-medium"
+            title="Toggle HTML code mode"
           >
-            {isSourceMode ? (
+            {isHtmlMode ? (
               <>
-                <Eye className="size-3" />
-                <span>Visual</span>
+                <Eye className="size-3.5" />
+                Visual
               </>
             ) : (
               <>
-                <Code className="size-3" />
-                <span>HTML</span>
+                <Code className="size-3.5" />
+                HTML
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Editor Content Area */}
-      {isSourceMode ? (
+      {isHtmlMode ? (
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={{ minHeight }}
-          className="font-mono text-xs w-full resize-y bg-transparent p-3 outline-none focus:outline-none"
+          className={cn(
+            "bg-muted/10 font-mono text-xs leading-relaxed p-4 w-full resize-y outline-none focus:ring-0",
+            minHeight,
+          )}
+          placeholder="Paste or write raw HTML here..."
         />
       ) : (
         <div
@@ -279,50 +358,19 @@ export const RichTextEditor: FC<RichTextEditorProps> = ({
           onKeyUp={updateActiveFormats}
           onMouseUp={updateActiveFormats}
           data-placeholder={placeholder}
-          style={{ minHeight }}
           className={cn(
-            "p-3 outline-none focus:outline-none",
-            "prose prose-sm dark:prose-invert max-w-none",
-            "[&_p]:my-1.5 [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-bold [&_h3]:mt-2.5 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold",
-            "[&_ul]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1.5 [&_ol]:list-decimal [&_ol]:pl-5",
-            "[&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-2",
-            "[&_a]:text-primary [&_a]:underline [&_hr]:my-3 [&_hr]:border-border",
-            "empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)] empty:before:pointer-events-none empty:before:block",
+            "prose prose-neutral dark:prose-invert max-w-none p-4 text-sm leading-relaxed outline-none focus:outline-none overflow-y-auto",
+            "[&_h2]:text-foreground [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2",
+            "[&_h3]:text-foreground [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1",
+            "[&_h4]:text-foreground [&_h4]:text-base [&_h4]:font-semibold [&_h4]:mt-2 [&_h4]:mb-1",
+            "[&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
+            "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2",
+            "[&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic",
+            "empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)] empty:before:pointer-events-none",
+            minHeight,
           )}
         />
       )}
     </div>
-  );
-};
-
-interface ToolbarButtonProps {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
-  onClick: (e: MouseEvent) => void;
-}
-
-function ToolbarButton({
-  icon,
-  label,
-  active,
-  disabled,
-  onClick,
-}: ToolbarButtonProps) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "text-muted-foreground hover:text-foreground hover:bg-background/80 inline-flex size-7 items-center justify-center rounded transition-colors cursor-pointer disabled:pointer-events-none disabled:opacity-40",
-        active && "bg-background text-foreground shadow-2xs font-bold",
-      )}
-    >
-      {icon}
-    </button>
   );
 }

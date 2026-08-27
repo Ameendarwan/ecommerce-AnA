@@ -4,16 +4,39 @@ import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
 import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
 import { toStoreContact } from "@/lib/storeSettingsDefaults";
+import { pageService } from "@/services/page/pageService";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Returns & Exchange Policy",
-  description: `Returns and exchanges at ${SITE.name} — how to request a return or size exchange.`,
-  path: "/returns",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await pageService.getPageBySlug("returns");
+  return pageMetadata({
+    title: page?.seo_title || page?.title || "Returns & Exchange Policy",
+    description:
+      page?.seo_description ||
+      `Returns and exchanges at ${SITE.name} — how to request a return or size exchange.`,
+    path: "/returns",
+  });
+}
 
 export default async function ReturnsPage() {
-  const settings = await getStoreSettingsServer();
+  const [settings, page] = await Promise.all([
+    getStoreSettingsServer(),
+    pageService.getPageBySlug("returns"),
+  ]);
+
   const store = toStoreContact(settings);
+
+  if (page && page.content) {
+    return (
+      <ContentPage
+        title={page.title}
+        description={
+          page.seo_description ||
+          "We want you to love what you ordered. Here's how returns and exchanges work."
+        }
+        htmlContent={page.content}
+      />
+    );
+  }
 
   return (
     <ContentPage

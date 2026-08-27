@@ -100,6 +100,7 @@ export const adminQuestionService = {
           user_id: row.user_id ?? null,
           name: row.name,
           email: row.email,
+          phone: row.phone ?? null,
           question: row.question,
           status: row.status as QuestionStatus,
           created_at: row.created_at ?? undefined,

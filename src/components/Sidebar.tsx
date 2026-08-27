@@ -38,6 +38,7 @@ import { usePathname, useRouter } from "next/navigation";
 const publicInfoLinks = [
   { name: "About us", href: "/about" },
   { name: "Contact us", href: "/contact" },
+  { name: "FAQs", href: "/faq" },
   { name: "Size chart", href: "/size-chart" },
   { name: "Shipping policy", href: "/shipping-policy" },
   { name: "Returns & exchanges", href: "/returns" },
@@ -54,7 +55,7 @@ function SidebarBackdrop() {
     <button
       type="button"
       aria-label="Close sidebar"
-      className="fixed inset-0 z-[65] cursor-default bg-black/50 backdrop-blur-[1px] transition-opacity"
+      className="fixed inset-0 z-65 cursor-default bg-black/50 backdrop-blur-[1px] transition-opacity"
       onClick={() => setOpen(false)}
     />
   );
@@ -135,6 +136,8 @@ export default function Sidebar() {
     { name: "Orders", href: "/admin/orders" },
     { name: "Reviews", href: "/admin/reviews" },
     { name: "Questions", href: "/admin/questions" },
+    { name: "Pages", href: "/admin/pages" },
+    { name: "FAQs", href: "/admin/faqs" },
     { name: "Users", href: "/admin/users" },
     { name: "Settings", href: "/admin/settings" },
   ];
@@ -169,7 +172,7 @@ export default function Sidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="hover:bg-muted/50 size-9 shrink-0 [&_svg]:!size-6"
+                className="hover:bg-muted/50 size-9 shrink-0 [&_svg]:size-6!"
                 onClick={() => setOpenMobile(false)}
                 aria-label="Close menu"
               >

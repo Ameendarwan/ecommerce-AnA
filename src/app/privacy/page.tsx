@@ -4,16 +4,39 @@ import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
 import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
 import { toStoreContact } from "@/lib/storeSettingsDefaults";
+import { pageService } from "@/services/page/pageService";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Privacy Policy",
-  description: `How ${SITE.name} collects, uses, and protects your personal information.`,
-  path: "/privacy",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await pageService.getPageBySlug("privacy");
+  return pageMetadata({
+    title: page?.seo_title || page?.title || "Privacy Policy",
+    description:
+      page?.seo_description ||
+      `How ${SITE.name} collects, uses, and protects your personal information.`,
+    path: "/privacy",
+  });
+}
 
 export default async function PrivacyPage() {
-  const settings = await getStoreSettingsServer();
+  const [settings, page] = await Promise.all([
+    getStoreSettingsServer(),
+    pageService.getPageBySlug("privacy"),
+  ]);
+
   const store = toStoreContact(settings);
+
+  if (page && page.content) {
+    return (
+      <ContentPage
+        title={page.title}
+        description={
+          page.seo_description ||
+          `How ${SITE.name} collects, uses, and protects your personal information.`
+        }
+        htmlContent={page.content}
+      />
+    );
+  }
 
   return (
     <ContentPage

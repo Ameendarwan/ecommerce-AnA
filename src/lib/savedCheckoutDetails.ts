@@ -1,5 +1,6 @@
 export interface SavedCheckoutDetails {
   guestName: string;
+  guestEmail?: string;
   guestPhone: string;
   street: string;
   city: string;
@@ -25,6 +26,7 @@ export function getSavedCheckoutDetails(): SavedCheckoutDetails | null {
     }
     return {
       guestName: parsed.guestName,
+      guestEmail: typeof parsed.guestEmail === "string" ? parsed.guestEmail : undefined,
       guestPhone: parsed.guestPhone,
       street: parsed.street,
       city: parsed.city,

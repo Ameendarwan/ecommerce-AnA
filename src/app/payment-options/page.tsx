@@ -5,15 +5,34 @@ import { pageMetadata, SITE } from "@/lib/seo";
 import { STORE_COUNTRY, STORE_CURRENCY } from "@/lib/shipping";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
+import { pageService } from "@/services/page/pageService";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Payment Options",
-  description: `How to pay for ${SITE.name} orders — cash on delivery and more.`,
-  path: "/payment-options",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await pageService.getPageBySlug("payment-options");
+  return pageMetadata({
+    title: page?.seo_title || page?.title || "Payment Options",
+    description:
+      page?.seo_description ||
+      `How to pay for ${SITE.name} orders — cash on delivery and more.`,
+    path: "/payment-options",
+  });
+}
 
 export default async function PaymentOptionsPage() {
-  const settings = await getStoreSettingsServer();
+  const [settings, page] = await Promise.all([
+    getStoreSettingsServer(),
+    pageService.getPageBySlug("payment-options"),
+  ]);
+
+  if (page && page.content) {
+    return (
+      <ContentPage
+        title={page.title}
+        description={page.seo_description || `Simple, secure ways to pay for your ${SITE.name} order.`}
+        htmlContent={page.content}
+      />
+    );
+  }
 
   return (
     <ContentPage

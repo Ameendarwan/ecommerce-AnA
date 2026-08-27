@@ -7,4 +7,5 @@ export * from './use-reviews'
 export * from './use-addresses'
 export * from './use-categories'
 export * from './use-store-settings'
+export * from './use-pages'
 

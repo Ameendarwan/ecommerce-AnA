@@ -1,16 +1,49 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
-import { pageMetadata } from "@/lib/seo";
-import { SITE } from "@/lib/seo";
+import { pageMetadata, SITE } from "@/lib/seo";
+import { pageService } from "@/services/page/pageService";
+import { getCategoriesServer } from "@/services/category/getCategoriesServer";
 
-export const metadata: Metadata = pageMetadata({
-  title: "About Us",
-  description: `Learn about ${SITE.name} — style for less, quality for more.`,
-  path: "/about",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await pageService.getPageBySlug("about");
+  return pageMetadata({
+    title: page?.seo_title || page?.title || "About Us",
+    description:
+      page?.seo_description ||
+      `Learn about ${SITE.name} — style for less, quality for more.`,
+    path: "/about",
+  });
+}
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const [page, categories] = await Promise.all([
+    pageService.getPageBySlug("about"),
+    getCategoriesServer(),
+  ]);
+
+  if (page && page.content) {
+    return (
+      <ContentPage
+        title={page.title}
+        description={page.seo_description || `${SITE.name} — style for less, quality for more.`}
+        htmlContent={page.content}
+      />
+    );
+  }
+
+  const categoryList =
+    categories && categories.length > 0
+      ? categories
+      : [
+          { id: 1, name: "Shirts" },
+          { id: 2, name: "Clothing" },
+          { id: 3, name: "Shoes" },
+          { id: 4, name: "Bags" },
+          { id: 5, name: "Accessories" },
+          { id: 6, name: "Electronics" },
+        ];
+
   return (
     <ContentPage
       title="About Us"
@@ -43,11 +76,24 @@ export default function AboutPage() {
 
       <h2>Our categories</h2>
       <p>
-        Explore <Link href="/shirts">shirts</Link>,{" "}
-        <Link href="/clothing">clothing</Link>,{" "}
-        <Link href="/shoes">shoes</Link>, <Link href="/bags">bags</Link>,{" "}
-        <Link href="/accessories">accessories</Link>, and{" "}
-        <Link href="/electronics">electronics</Link> — all in one place.
+        Explore{" "}
+        {categoryList.map((cat, idx) => {
+          const isLast = idx === categoryList.length - 1;
+          const isSecondLast = idx === categoryList.length - 2;
+          const href = `/${cat.name.toLowerCase().trim().replace(/\s+/g, "-")}`;
+          return (
+            <span key={cat.id}>
+              <Link
+                href={href}
+                className="text-foreground underline underline-offset-2"
+              >
+                {cat.name.toLowerCase()}
+              </Link>
+              {isSecondLast ? ", and " : !isLast ? ", " : ""}
+            </span>
+          );
+        })}{" "}
+        — all in one place.
       </p>
 
       <h2>Questions?</h2>

@@ -198,7 +198,7 @@ export default function AdminQuestionsPage() {
             <AdminEntityCell
               initials={initials || "?"}
               title={item.name}
-              subtitle={item.email}
+              subtitle={item.phone ? `${item.email} • ${item.phone}` : item.email}
             />
           );
         },

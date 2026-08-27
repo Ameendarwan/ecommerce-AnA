@@ -1,23 +1,32 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Phone, Mail } from "lucide-react";
 import { SITE } from "@/lib/seo";
 import { toStoreContact, DEFAULT_STORE_SETTINGS } from "@/lib/storeSettingsDefaults";
 import { useStoreSettings } from "@/hooks/queries/use-store-settings";
+import { usePublishedPages } from "@/hooks/queries/use-pages";
 
-const informationLinks = [
+const STANDARD_PAGE_SLUGS = [
+  "about",
+  "privacy",
+  "shipping-policy",
+  "payment-options",
+  "returns",
+  "size-chart",
+];
+
+const DEFAULT_INFORMATION_LINKS = [
   { href: "/about", label: "About us" },
   { href: "/contact", label: "Contact us" },
   { href: "/returns", label: "Returns & Exchange Policy" },
   { href: "/size-chart", label: "Size Chart" },
-] as const;
-
-const serviceLinks = [
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/shipping-policy", label: "Shipping Policy" },
   { href: "/payment-options", label: "Payment Options" },
-] as const;
+];
 
 function FooterLink({ href, label }: { href: string; label: string }) {
   return (
@@ -35,7 +44,36 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 export function Footer() {
   const pathname = usePathname();
   const { data: settings } = useStoreSettings();
+  const { data: pages } = usePublishedPages();
   const store = toStoreContact(settings ?? DEFAULT_STORE_SETTINGS);
+
+  const informationLinks = useMemo(() => {
+    if (!pages || pages.length === 0) {
+      return DEFAULT_INFORMATION_LINKS;
+    }
+
+    const links: { href: string; label: string }[] = [];
+    let addedContact = false;
+
+    for (const page of pages) {
+      const href = STANDARD_PAGE_SLUGS.includes(page.slug)
+        ? `/${page.slug}`
+        : `/p/${page.slug}`;
+
+      links.push({ href, label: page.title });
+
+      if (page.slug === "about") {
+        links.push({ href: "/contact", label: "Contact us" });
+        addedContact = true;
+      }
+    }
+
+    if (!addedContact) {
+      links.push({ href: "/contact", label: "Contact us" });
+    }
+
+    return links;
+  }, [pages]);
 
   if (pathname?.startsWith("/admin")) {
     return null;
@@ -88,7 +126,7 @@ export function Footer() {
   return (
     <footer className="border-border bg-background mt-auto border-t">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
           <div className="space-y-5">
             <h3 className="text-foreground text-sm font-semibold tracking-wide uppercase">
               About Us
@@ -122,7 +160,7 @@ export function Footer() {
 
           <div className="space-y-5">
             <h3 className="text-foreground text-sm font-semibold tracking-wide uppercase">
-              Informations
+              Information
             </h3>
             <ul className="space-y-3">
               {informationLinks.map((link) => (
@@ -133,27 +171,25 @@ export function Footer() {
 
           <div className="space-y-5">
             <h3 className="text-foreground text-sm font-semibold tracking-wide uppercase">
-              Customer Services
-            </h3>
-            <ul className="space-y-3">
-              {serviceLinks.map((link) => (
-                <FooterLink key={link.href} {...link} />
-              ))}
-            </ul>
-          </div>
-
-          <div className="space-y-5">
-            <h3 className="text-foreground text-sm font-semibold tracking-wide uppercase">
-              Connect With Us
+              Customer Care
             </h3>
             <ul className="text-muted-foreground space-y-3 text-sm">
+              <li>
+                <Link
+                  href="/faq"
+                  className="hover:text-foreground transition-colors"
+                >
+                  FAQs
+                </Link>
+              </li>
               {store.phone && (
                 <li>
                   <a
                     href={`tel:${store.phone.replace(/-/g, "")}`}
-                    className="hover:text-foreground transition-colors"
+                    className="hover:text-foreground flex items-center gap-2 transition-colors"
                   >
-                    {store.phone}
+                    <Phone className="size-4 shrink-0" aria-hidden="true" />
+                    <span>{store.phone}</span>
                   </a>
                 </li>
               )}
@@ -161,14 +197,13 @@ export function Footer() {
                 <li>
                   <a
                     href={`mailto:${store.email}`}
-                    className="hover:text-foreground underline underline-offset-2 transition-colors"
+                    className="hover:text-foreground flex items-center gap-2 underline underline-offset-2 transition-colors"
                   >
-                    {store.email}
+                    <Mail className="size-4 shrink-0" aria-hidden="true" />
+                    <span>{store.email}</span>
                   </a>
                 </li>
               )}
-              {store.address && <li>{store.address}</li>}
-              {store.hours && <li>{store.hours}</li>}
             </ul>
           </div>
         </div>

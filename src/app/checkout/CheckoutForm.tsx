@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ import { DEFAULT_STORE_SETTINGS } from '@/lib/storeSettingsDefaults';
 
 export default function CheckoutForm() {
   const { cartItems, subtotal, clearCart, isLoading } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: settings } = useStoreSettings();
@@ -39,6 +41,7 @@ export default function CheckoutForm() {
   const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
@@ -49,13 +52,16 @@ export default function CheckoutForm() {
     const saved = getSavedCheckoutDetails();
     if (saved) {
       setGuestName(saved.guestName);
+      setGuestEmail(saved.guestEmail || user?.email || '');
       setGuestPhone(saved.guestPhone);
       setStreet(saved.street);
       setCity(saved.city);
       setNotes(saved.notes);
       setSaveDetails(true);
+    } else if (user?.email) {
+      setGuestEmail(user.email);
     }
-  }, []);
+  }, [user?.email]);
 
   if (isLoading || redirecting) {
     return (
@@ -86,8 +92,13 @@ export default function CheckoutForm() {
     return /^(\+92|0)?3\d{9}$/.test(normalized);
   };
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
   const isFormValid =
     guestName.trim().length >= 2 &&
+    isValidEmail(guestEmail) &&
     isValidPkPhone(guestPhone.trim()) &&
     city.trim().length >= 2 &&
     street.trim().length >= 5 &&
@@ -124,15 +135,18 @@ export default function CheckoutForm() {
     try {
       const result = await placeCodOrder({
         guestName,
+        guestEmail,
         guestPhone,
         street,
         city,
         notes,
+        userId: user?.id || null,
         items: cartItems.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           price: item.price,
           title: item.title,
+          image: item.image || null,
         })),
       });
 
@@ -144,6 +158,7 @@ export default function CheckoutForm() {
       if (saveDetails) {
         saveCheckoutDetails({
           guestName: guestName.trim(),
+          guestEmail: guestEmail.trim(),
           guestPhone: guestPhone.trim(),
           street: street.trim(),
           city: city.trim(),
@@ -159,7 +174,7 @@ export default function CheckoutForm() {
       // Show loader before clearing cart so the empty-cart screen never flashes
       setRedirecting(true);
       clearCart({ silent: true });
-      toast.success('Order placed — pay cash on delivery');
+      toast.success('Order placed! Confirmation email sent.');
       router.push(
         `/checkout/success?order_id=${result.orderId}&total=${result.total}`
       );
@@ -199,6 +214,25 @@ export default function CheckoutForm() {
                 aria-required="true"
                 autoComplete="name"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="guestEmail">
+                Email address <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="guestEmail"
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder="your.email@example.com"
+                required
+                aria-required="true"
+                autoComplete="email"
+                inputMode="email"
+              />
+              <p className="text-muted-foreground text-xs">
+                Your order confirmation receipt will be sent to this email.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="guestPhone">
@@ -268,7 +302,7 @@ export default function CheckoutForm() {
                   Save my details for next time
                 </span>
                 <span className="text-muted-foreground block text-xs">
-                  We&apos;ll autofill your name, phone, and address on this
+                  We&apos;ll autofill your name, email, phone, and address on this
                   device.
                 </span>
               </span>

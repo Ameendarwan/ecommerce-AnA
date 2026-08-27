@@ -58,9 +58,10 @@ function getCustomerName(order: OrderWithDetails) {
 }
 
 function getCustomerSubtext(order: OrderWithDetails) {
-  if (order.guest_phone) return order.guest_phone;
   if (order.profile?.email && order.profile.username)
     return order.profile.email;
+  if (order.guest_email) return order.guest_email;
+  if (order.guest_phone) return order.guest_phone;
   if (!order.user_id) return "COD guest";
   return "Registered";
 }
@@ -126,6 +127,7 @@ export default function AdminOrdersPage() {
         order.profile?.username?.toLowerCase().includes(q) ||
         order.profile?.email?.toLowerCase().includes(q) ||
         order.guest_name?.toLowerCase().includes(q) ||
+        order.guest_email?.toLowerCase().includes(q) ||
         order.guest_phone?.toLowerCase().includes(q) ||
         order.shipping_city?.toLowerCase().includes(q) ||
         order.shipping_address?.city?.toLowerCase().includes(q),

@@ -5,15 +5,34 @@ import { pageMetadata, SITE } from "@/lib/seo";
 import { STORE_COUNTRY } from "@/lib/shipping";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { getStoreSettingsServer } from "@/services/settings/getStoreSettingsServer";
+import { pageService } from "@/services/page/pageService";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Shipping Policy",
-  description: `Shipping rates and delivery info for ${SITE.name} orders across ${STORE_COUNTRY}.`,
-  path: "/shipping-policy",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await pageService.getPageBySlug("shipping-policy");
+  return pageMetadata({
+    title: page?.seo_title || page?.title || "Shipping Policy",
+    description:
+      page?.seo_description ||
+      `Shipping rates and delivery info for ${SITE.name} orders across ${STORE_COUNTRY}.`,
+    path: "/shipping-policy",
+  });
+}
 
 export default async function ShippingPolicyPage() {
-  const settings = await getStoreSettingsServer();
+  const [settings, page] = await Promise.all([
+    getStoreSettingsServer(),
+    pageService.getPageBySlug("shipping-policy"),
+  ]);
+
+  if (page && page.content) {
+    return (
+      <ContentPage
+        title={page.title}
+        description={page.seo_description || `How we deliver ${SITE.name} orders across ${STORE_COUNTRY}.`}
+        htmlContent={page.content}
+      />
+    );
+  }
 
   return (
     <ContentPage

@@ -6,7 +6,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettingsType = {
   shipping_price: 250,
   phone: "0310-0021434",
   email: "admin@thriftonia.pk",
-  address: "",
+  address: "B-213 Phase-1, Gulshan Hadeed, Karachi",
   hours: "Mon–Sat: 02:00 PM to 09:00 PM",
   social_tiktok: "https://www.tiktok.com/@thriftonia",
   social_youtube: "https://www.youtube.com/@thriftonia",

@@ -4,20 +4,24 @@ import { createServiceRoleSupabase } from '@/lib/supabase/serviceRole';
 import { getStoreSettingsServer } from '@/services/settings/getStoreSettingsServer';
 import { DEFAULT_STORE_SETTINGS } from '@/lib/storeSettingsDefaults';
 import { revalidateCatalog } from '@/lib/cache/revalidateCatalog';
+import { sendOrderConfirmationEmail } from '@/lib/email/sendOrderConfirmation';
 
 export interface CodCartLine {
   product_id: string;
   quantity: number;
   price: number;
   title: string;
+  image?: string | null;
 }
 
 export interface CodCheckoutPayload {
   guestName: string;
+  guestEmail?: string;
   guestPhone: string;
   street: string;
   city: string;
   notes?: string;
+  userId?: string | null;
   items: CodCartLine[];
 }
 
@@ -107,6 +111,7 @@ export async function placeCodOrder(
   payload: CodCheckoutPayload
 ): Promise<PlaceCodOrderResult> {
   const guestName = payload.guestName?.trim();
+  const guestEmail = payload.guestEmail?.trim() || null;
   const guestPhone = payload.guestPhone?.trim();
   const street = payload.street?.trim();
   const city = payload.city?.trim();
@@ -158,6 +163,13 @@ export async function placeCodOrder(
   }
 
   const reserved: Array<{ product_id: string; quantity: number }> = [];
+  const itemsWithImages: Array<{
+    product_id: string;
+    title: string;
+    quantity: number;
+    price: number;
+    image: string | null;
+  }> = [];
 
   try {
     const supabase = createServiceRoleSupabase();
@@ -166,7 +178,7 @@ export async function placeCodOrder(
     for (const item of items) {
       const { data: product, error } = await supabase
         .from('products')
-        .select('product_id, stock, title')
+        .select('product_id, stock, title, image')
         .eq('product_id', item.product_id)
         .single();
 
@@ -207,16 +219,24 @@ export async function placeCodOrder(
       }
 
       reserved.push({ product_id: item.product_id, quantity: item.quantity });
+      itemsWithImages.push({
+        product_id: item.product_id,
+        title: product.title || item.title || 'Product',
+        quantity: item.quantity,
+        price: item.price,
+        image: product.image || item.image || null,
+      });
     }
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        user_id: null,
+        user_id: payload.userId || null,
         status: 'pending',
         total,
         payment_method: 'cod',
         guest_name: guestName,
+        guest_email: guestEmail,
         guest_phone: normalizePkPhone(guestPhone),
         shipping_street: street,
         shipping_city: city,
@@ -256,6 +276,25 @@ export async function placeCodOrder(
     }
 
     await revalidateCatalog(items.map((item) => item.product_id));
+
+    // Send order confirmation email via Nodemailer asynchronously
+    if (guestEmail && guestEmail.includes('@')) {
+      sendOrderConfirmationEmail({
+        orderId: order.id,
+        customerName: guestName,
+        customerEmail: guestEmail,
+        customerPhone: guestPhone,
+        shippingStreet: street,
+        shippingCity: city,
+        shippingNotes: notes,
+        items: itemsWithImages,
+        subtotal,
+        shippingFee,
+        total,
+      }).catch((emailErr) => {
+        console.error('[placeCodOrder] Error sending confirmation email:', emailErr);
+      });
+    }
 
     return { ok: true, orderId: order.id, total };
   } catch (err) {

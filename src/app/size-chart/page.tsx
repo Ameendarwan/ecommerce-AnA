@@ -2,12 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 import { pageMetadata, SITE } from "@/lib/seo";
+import { pageService } from "@/services/page/pageService";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Size Chart",
-  description: `Find your fit with the ${SITE.name} size chart for shirts and clothing.`,
-  path: "/size-chart",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await pageService.getPageBySlug("size-chart");
+  return pageMetadata({
+    title: page?.seo_title || page?.title || "Size Chart",
+    description:
+      page?.seo_description ||
+      `Find your fit with the ${SITE.name} size chart for shirts and clothing.`,
+    path: "/size-chart",
+  });
+}
 
 const shirtSizes = [
   { size: "S", chest: "36–38", length: "27", shoulder: "16.5" },
@@ -17,7 +23,22 @@ const shirtSizes = [
   { size: "XXL", chest: "44–46", length: "31", shoulder: "20.5" },
 ] as const;
 
-export default function SizeChartPage() {
+export default async function SizeChartPage() {
+  const page = await pageService.getPageBySlug("size-chart");
+
+  if (page && page.content) {
+    return (
+      <ContentPage
+        title={page.title}
+        description={
+          page.seo_description ||
+          "Use this guide as a starting point. Actual measurements can vary slightly by style and brand."
+        }
+        htmlContent={page.content}
+      />
+    );
+  }
+
   return (
     <ContentPage
       title="Size Chart"
