@@ -2,7 +2,6 @@
   "name": "ecommerce-supabase-nextjs",
   "private": true,
   "version": "1.1.0",
-  "type": "module",
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
@@ -12,7 +11,8 @@
     "version:minor": "npm version minor",
     "version:major": "npm version major",
     "version:check": "npm version",
-    "precommit": "npm run lint && npm run build"
+    "precommit": "npm run lint && npm run build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -56,6 +56,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "husky": "^9.1.7",
     "postcss": "^8.5.9",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
