@@ -123,9 +123,11 @@ export default function CheckoutForm() {
     );
     if (invalidItem) {
       toast.error(
-        invalidItem.stock < 1 || invalidItem.quantity < 1
-          ? `${invalidItem.title} has invalid quantity — remove it or update your cart`
-          : `Only ${invalidItem.stock} left of ${invalidItem.title}`
+        invalidItem.stock < 1
+          ? `${invalidItem.title} is sold out. Please remove it from your cart.`
+          : invalidItem.quantity < 1
+            ? `${invalidItem.title} has invalid quantity — remove it or update your cart`
+            : `Only ${invalidItem.stock} left of ${invalidItem.title}. Please update your cart.`
       );
       return;
     }

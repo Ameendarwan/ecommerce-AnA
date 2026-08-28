@@ -192,14 +192,17 @@ export async function placeCodOrder(
 
       if (!product.stock || product.stock < 1) {
         await restoreReservedStock(supabase, reserved);
-        return { ok: false, error: `${product.title} is sold out` };
+        return {
+          ok: false,
+          error: `${product.title} is sold out. Please remove it from your cart.`,
+        };
       }
 
       if (product.stock < item.quantity) {
         await restoreReservedStock(supabase, reserved);
         return {
           ok: false,
-          error: `Only ${product.stock} left of ${product.title}`,
+          error: `Only ${product.stock} left of ${product.title}. Please update your cart.`,
         };
       }
 
@@ -214,7 +217,7 @@ export async function placeCodOrder(
         await restoreReservedStock(supabase, reserved);
         return {
           ok: false,
-          error: `${product.title} just sold out — please update your cart`,
+          error: `${product.title} is sold out. Please remove it from your cart.`,
         };
       }
 
