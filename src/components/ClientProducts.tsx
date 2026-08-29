@@ -6,7 +6,7 @@ import { ProductType } from "@/types";
 import { ErrorState } from "@/components/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BrandLoader } from "@/components/BrandLoader";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 // Helper functions (moved from hook to component for simplicity)
 const sortProducts = (
@@ -70,10 +70,11 @@ export default function ClientProducts({
 
   const BATCH_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
-  const observerTarget = useRef<HTMLDivElement | null>(null);
+  const [observerTarget, setObserverTarget] = useState<HTMLDivElement | null>(
+    null,
+  );
 
   // Process products with search, filters, and sorting
-  //useMemo is used to memoize the function
   const processedProducts = useMemo(() => {
     if (!products) return [];
 
@@ -100,15 +101,18 @@ export default function ClientProducts({
     return processed;
   }, [products, searchTerm, filters]);
 
+  const hasMore = visibleCount < processedProducts.length;
+
   // Reset pagination on filter or search changes
   useEffect(() => {
     setVisibleCount(BATCH_SIZE);
   }, [searchTerm, filters]);
 
-  // Infinite scroll trigger with large margin for seamless preload before viewport bottom
+  // Trigger the next batch before the user reaches the last loaded cards.
+  // Mobile cards are ~viewport tall, so a 500px margin sat behind 3 stacked
+  // placeholders and felt like the 3rd empty product had to be reached first.
   useEffect(() => {
-    const target = observerTarget.current;
-    if (!target) return;
+    if (!observerTarget || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -118,12 +122,12 @@ export default function ClientProducts({
           );
         }
       },
-      { rootMargin: "500px" },
+      { rootMargin: "1200px 0px" },
     );
 
-    observer.observe(target);
+    observer.observe(observerTarget);
     return () => observer.disconnect();
-  }, [processedProducts.length, visibleCount]);
+  }, [observerTarget, hasMore, processedProducts.length, visibleCount]);
 
   const visibleProducts = useMemo(() => {
     return processedProducts.slice(0, visibleCount);
@@ -245,19 +249,29 @@ export default function ClientProducts({
                   />
                 ))}
 
-                {visibleCount < processedProducts.length &&
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <ProductCardSkeleton key={`skeleton-${i}`} />
-                  ))}
+                {hasMore && (
+                  <>
+                    <div
+                      ref={setObserverTarget}
+                      className="col-span-full h-px w-full"
+                      aria-hidden="true"
+                    />
+                    <ProductCardSkeleton key="skeleton-0" />
+                    <ProductCardSkeleton
+                      key="skeleton-1"
+                      className="hidden sm:block"
+                    />
+                    <ProductCardSkeleton
+                      key="skeleton-2"
+                      className="hidden md:block"
+                    />
+                    <ProductCardSkeleton
+                      key="skeleton-3"
+                      className="hidden lg:block"
+                    />
+                  </>
+                )}
               </div>
-
-              {visibleCount < processedProducts.length && (
-                <div
-                  ref={observerTarget}
-                  className="h-16 w-full"
-                  aria-hidden="true"
-                />
-              )}
             </>
           )}
         </div>

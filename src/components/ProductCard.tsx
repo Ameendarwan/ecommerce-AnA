@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductType } from "@/types";
@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Badge as BadgeIcon } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/formatCurrency";
 import {
   getProductSalePrice,
@@ -28,9 +29,14 @@ function stripHtml(html?: string): string {
     .trim();
 }
 
-export function ProductCardSkeleton() {
+export function ProductCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className="gap-0 overflow-hidden rounded-none border-0 bg-transparent py-0">
+    <div
+      className={cn(
+        "gap-0 overflow-hidden rounded-none border-0 bg-transparent py-0",
+        className,
+      )}
+    >
       <div className="bg-muted/70 relative aspect-[3/4] w-full animate-pulse overflow-hidden rounded-none" />
       <div className="space-y-2 px-0 pt-3 pb-0">
         <div className="bg-muted/50 h-3 w-1/2 animate-pulse rounded" />
@@ -47,7 +53,30 @@ export function ProductCardSkeleton() {
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart, removeFromCart, cartItems } = useCart();
   const router = useRouter();
+  const mediaRef = useRef<HTMLDivElement>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  // Native loading="lazy" waits until the image is almost on screen on mobile
+  // (~2–3 tall cards). Preload once the card is within ~2 viewports.
+  const [shouldLoadImage, setShouldLoadImage] = useState(priority);
+
+  useEffect(() => {
+    if (shouldLoadImage) return;
+    const node = mediaRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setShouldLoadImage(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "1200px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shouldLoadImage]);
 
   const soldOut = product.stock <= 0;
   const inCart = cartItems.some(
@@ -82,32 +111,37 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       onClick={handleProductClick}
     >
       {/* Image Container */}
-      <div className="bg-muted/50 relative aspect-[3/4] overflow-hidden rounded-none">
+      <div
+        ref={mediaRef}
+        className="bg-muted/50 relative aspect-[3/4] overflow-hidden rounded-none"
+      >
         {primaryImage ? (
           <>
             {!isImageLoaded && (
               <div className="bg-muted/70 absolute inset-0 animate-pulse" />
             )}
-            <Image
-              src={primaryImage}
-              alt={product.title}
-              width={400}
-              height={533}
-              priority={priority}
-              quality={75}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              onLoad={() => setIsImageLoaded(true)}
-              className={`h-full w-full object-cover transition-all duration-500 ease-out ${
-                isImageLoaded ? "opacity-100" : "opacity-0"
-              } ${
-                hoverImage
-                  ? "opacity-100 group-hover:opacity-0"
-                  : "scale-100 group-hover:scale-105"
-              }`}
-              loading={priority ? undefined : "lazy"}
-            />
+            {shouldLoadImage && (
+              <Image
+                src={primaryImage}
+                alt={product.title}
+                width={400}
+                height={533}
+                priority={priority}
+                quality={75}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                onLoad={() => setIsImageLoaded(true)}
+                loading={priority ? undefined : "eager"}
+                className={`h-full w-full object-cover transition-all duration-500 ease-out ${
+                  isImageLoaded ? "opacity-100" : "opacity-0"
+                } ${
+                  hoverImage
+                    ? "opacity-100 group-hover:opacity-0"
+                    : "scale-100 group-hover:scale-105"
+                }`}
+              />
+            )}
 
-            {hoverImage && (
+            {shouldLoadImage && hoverImage && (
               <Image
                 src={hoverImage}
                 alt={`${product.title} alternate view`}
@@ -115,8 +149,8 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
                 height={533}
                 quality={75}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                loading="eager"
                 className="absolute inset-0 h-full w-full scale-100 object-cover opacity-0 transition-all duration-500 ease-out group-hover:scale-105 group-hover:opacity-100"
-                loading="lazy"
               />
             )}
           </>
